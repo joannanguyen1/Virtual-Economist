@@ -1,0 +1,30 @@
+repos:
+  # Ruff handles lint + formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.8
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # Mypy for type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        additional_dependencies: []
+
+  # Black (optional if you prefer Ruff only)
+  # - repo: https://github.com/psf/black
+  #   rev: 24.8.0
+  #   hooks:
+  #     - id: black
+
+  # End of file fixer + trailing whitespace remover
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-json
