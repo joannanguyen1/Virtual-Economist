@@ -5,7 +5,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Windows (PowerShell)
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# Add uv to your PATH
+Add uv to your PATH
 
 echo 'source $HOME/.local/bin/env' >> ~/.zshrc && source ~/.zshrc
 
