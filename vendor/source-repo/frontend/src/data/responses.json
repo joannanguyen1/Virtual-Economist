@@ -1,0 +1,45 @@
+{
+  "responses": {
+    "general": {
+      "hello": "Welcome to the Virtual Economist! How can I assist you with economic data or insights today?",
+      "help": "You can ask me about GDP, inflation rates, interest rates, unemployment, or other economic trends. What would you like to know?",
+      "default": "I'm sorry, I didn't quite understand that. Could you try asking about specific economic indicators or trends?"
+    },
+    "macroeconomic_indicators": {
+      "current_gdp": "The current U.S. GDP is $26.7 trillion as of Q3 2024. Would you like a breakdown by industry?",
+      "gdp_growth": "The U.S. GDP grew at an annualized rate of 2.9% last quarter. Manufacturing and technology sectors contributed the most.",
+      "inflation_rate": "The U.S. inflation rate is currently 3.2%. This is a slight decrease from last month's 3.4%.",
+      "interest_rate": "The Federal Reserve's current target interest rate is 5.5%, aimed at balancing inflation and economic growth.",
+      "unemployment_rate": "The U.S. unemployment rate stands at 3.8%, reflecting a stable labor market with strong job growth in healthcare and tech."
+    },
+    "trends_and_predictions": {
+      "inflation_trend": "Inflation has been gradually decreasing due to improved supply chains and stable energy prices. Would you like to see historical trends?",
+      "gdp_forecast": "Economic analysts predict a GDP growth rate of 2.5% for 2025, driven by innovation in renewable energy and technology.",
+      "interest_rate_trend": "Interest rates have been stable over the last quarter. The Federal Reserve has indicated a cautious approach to further changes."
+    },
+    "federal_reserve_policy": {
+      "fed_policy": "The Federal Reserve's policy is focused on reducing inflation while supporting employment. Their next decision will be announced in December.",
+      "fomc_meeting": "The FOMC's latest meeting emphasized the need to monitor inflationary pressures and maintain current rates. Would you like a summary of their discussion?",
+      "quantitative_easing": "The Federal Reserve is no longer pursuing quantitative easing, focusing instead on stabilizing inflation through interest rate adjustments."
+    },
+    "sector_insights": {
+      "housing_market": "The housing market has cooled due to higher mortgage rates, but demand remains strong in metropolitan areas.",
+      "tech_industry": "The tech sector continues to grow, with AI and cloud computing driving significant investments.",
+      "energy_sector": "Renewable energy projects are expanding rapidly, while oil prices have stabilized at $75 per barrel."
+    },
+    "regional_data": {
+      "us_economy": "The U.S. economy remains strong, with steady growth in GDP and low unemployment. Would you like data on a specific region or state?",
+      "european_economy": "The European economy is experiencing moderate growth, with inflation cooling to 2.8%. Germany leads in industrial output.",
+      "china_economy": "China's GDP growth rate is projected at 5% for this year, driven by exports and domestic consumption."
+    },
+    "custom_calculations": {
+      "cpi_calculator": "To calculate the CPI for a basket of goods, provide the base year price and the current year price of items.",
+      "gdp_per_capita": "Divide the total GDP by the population. For the U.S., it's approximately $80,000 per person as of 2024."
+    }
+  },
+  "examples": {
+    "inflation_rate": "The U.S. inflation rate is 3.2% as of October 2024. Would you like historical trends or contributing factors?",
+    "labor_market": "The labor market remains resilient, with unemployment at 3.8%. Job growth is strongest in healthcare and technology.",
+    "energy_sector": "The energy sector is focusing on renewables, with solar and wind projects expanding. Oil prices are stable at $75 per barrel."
+  }
+}

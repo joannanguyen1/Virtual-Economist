@@ -1,0 +1,144 @@
+/* App.css */
+body {
+  background-color: #121212;
+  color: #e0e0e0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+}
+.typing-indicator {
+  font-style: italic;
+  font-size: 0.95rem;
+  margin: 0 0 10px 20px;
+}
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+.top-nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 20px;
+  background-color: #1e1e1e; z-index: 1000; border-bottom: 1px solid #333;
+}
+.home-button, .login-button {
+  background-color: rgb(75,74,74); color: #e0e0e0; border: none;
+  padding: 8px 16px; border-radius: 20px; font-size: 1rem;
+  cursor: pointer; text-decoration: none; transition: background-color .3s;
+}
+.home-button:hover, .login-button:hover { background-color: #444; }
+.agent-selector { margin-left: 10px; }
+.agent-selector select {
+  background-color: #333; color: #e0e0e0; border: none;
+  padding: 8px 16px; border-radius: 20px; font-size: 1rem;
+  cursor: pointer; transition: background-color .3s;
+}
+.agent-selector select:hover { background-color: #444; }
+.header-title {
+  flex: 1; text-align: center; font-size: 1.2rem; font-weight: bold;
+  color: #e0e0e0;
+}
+.sidebar {
+  width: 250px; background-color: #1e1e1e; padding: 20px;
+  overflow-y: auto; position: fixed;
+  top: 60px; bottom: 0; left: 0; border-right: 1px solid #333;
+}
+.history-list { margin-top: 20px; }
+.history-item {
+  padding: 10px; background-color: #333; border-radius: 5px;
+  margin-bottom: 10px; cursor: pointer; color: #e0e0e0;
+  transition: background-color .3s;
+}
+.history-item:hover { background-color: #444; }
+.history-item.active { background-color: #007bff; }
+.empty-history { color: #888; }
+.chat-section {
+  flex: 1; margin-left: 250px; margin-top: 60px;
+  display: flex; flex-direction: column;
+  height: calc(100vh - 60px); background-color: #000;
+}
+.chat-container {
+  flex: 1; display: flex; flex-direction: column; padding: 20px;
+  background-color: #000;
+}
+.chat-display {
+  flex: 1; overflow-y: auto; padding: 20px;
+  background-color: #000; border-radius: 10px; margin-bottom: 20px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.chat-message {
+  display: inline-block; max-width: 75%; padding: 12px 20px;
+  border-radius: 25px; background-color: #333; color: #e0e0e0;
+  word-wrap: break-word; line-height: 1.5;
+}
+.chat-message.user {
+  background-color: #007bff; align-self: flex-end; margin-right: 15px;
+}
+.chat-message.chatbot {
+  background-color: #444; align-self: flex-start; margin-left: 20px;
+}
+.chat-input-container {
+  display: flex; justify-content: center; padding: 10px;
+  background-color: #000; border-radius: 10px;
+}
+.input-wrapper {
+  display: flex; align-items: center; width: 100%; max-width: 800px;
+}
+.input-wrapper input {
+  flex: 1; background-color: #333; border: none; color: #e0e0e0;
+  padding: 10px; border-radius: 20px; font-size: 1rem;
+  outline: none; transition: background-color .3s;
+}
+.input-wrapper input:focus { background-color: #444; }
+.input-wrapper button {
+  background-color: #007bff; color: #fff; border: none;
+  padding: 10px 20px; border-radius: 20px; margin-left: 10px;
+  cursor: pointer; transition: background-color .3s;
+}
+.input-wrapper button:hover { background-color: #0056b3; }
+.centered-page {
+  display: flex; justify-content: center; align-items: center;
+  height: 100vh; width: 100%;
+}
+.auth-container {
+  background-color: #1e1e1e; padding: 30px; border-radius: 10px;
+  text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  min-width: 300px;
+}
+/* ─── History panel container ─────────────────────────────────────────────── */
+.history-container {
+  position: fixed; top: 60px; bottom: 0; left: 0; width: 250px;
+  background-color: #1e1e1e; border-right: 1px solid #333;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.history-container.collapsed { transform: translateX(-100%); }
+/* ─── New scroll‐wrapper for just the history list ────────────────────────── */
+.chat-history-wrapper { flex: 1; overflow-y: auto; }
+/* ─── Agent buttons in the history panel ─────────────────────────────────── */
+.agent-buttons {
+  display: flex; gap: 10px; padding: 12px; justify-content: center;
+  background-color: #1e1e1e; border-bottom: 1px solid #333; z-index: 1;
+}
+.agent-button {
+  background-color: #333; color: #e0e0e0; border: none;
+  padding: 6px 14px; border-radius: 20px; cursor: pointer;
+  transition: background-color .3s, box-shadow .2s;
+  font-size: 0.9rem; min-width: 110px; text-align: center;
+}
+.agent-button:hover { background-color: #444; }
+.agent-button.active-agent {
+  background-color: #007bff; color: #fff;
+  box-shadow: 0 0 8px rgba(0,123,255,0.6);
+}
+/* ─── Styled collapse button ─────────────────────────────────────────────── */
+.header-collapse-button { margin-left: 10px; }
+/* ─── vertical agent list ───────────────────────────────────────────────── */
+.agent-list { list-style: none; margin: 16px 0; padding: 0; }
+.agent-item {
+  padding: 12px 20px; margin: 4px 12px; border-radius: 8px;
+  cursor: pointer; color: #e0e0e0; transition: background-color .2s;
+}
+.agent-item:hover { background-color: #2a2a2a; }
+.agent-item.active { background-color: #007cff; color: #fff; }
+.agent-divider { height: 1px; background-color: #333; margin: 8px 12px; }
