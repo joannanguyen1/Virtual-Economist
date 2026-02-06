@@ -1,24 +1,78 @@
-import { Link } from 'react-router-dom'
-import '../styles/auth.css'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "../styles/auth.css";
 
 const SignupPage = () => {
-    return (
-        <div className='auth-container'>
-            <h1>Sign Up</h1>
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-            <form className='auth-form'>
-                <input type="text" placeholder="Full Name" />
-                <input type="email" placeholder='Email' />
-                <input type="password" placeholder="Password" />
-                <button type="submit">Sign Up</button>
-            </form>
+  const navigate = useNavigate();
 
-            <p className='auth-footer'>
-                Already have an account? <Link to="/login">Log in</Link>
-            </p>
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
 
-        </div>
-    )
-}
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name, email, password })
+      });
 
-export default SignupPage
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Signup failed");
+        return;
+      }
+
+      alert("Signup successful!");
+      navigate("/login"); //maybe home page instead
+
+    } catch (err) {
+      console.error(err);
+      alert("Server error");
+    }
+  }
+
+  return (
+    <div className="auth-container">
+      <h1>Sign Up</h1>
+
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Full Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+
+        <button type="submit">Sign Up</button>
+      </form>
+
+      <p className="auth-footer">
+        Already have an account? <Link to="/login">Log in</Link>
+      </p>
+    </div>
+  );
+};
+
+export default SignupPage;
