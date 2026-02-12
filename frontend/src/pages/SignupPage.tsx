@@ -13,7 +13,7 @@ const SignupPage = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch("/api/register", {
+      const res = await fetch("http://localhost:800/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -28,7 +28,7 @@ const SignupPage = () => {
       }
 
       alert("Signup successful!");
-      navigate("/login"); //maybe home page instead
+      navigate("/login"); 
 
     } catch (err) {
       console.error(err);

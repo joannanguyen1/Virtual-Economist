@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import "../styles/landing.css";
 
 const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <>
       <Navbar />
@@ -15,7 +16,7 @@ const LandingPage: React.FC = () => {
             trends.
           </p>
           <div className="landing-actions">
-            <button className="primary">Get Started</button>
+            <button className="primary" onClick={() => navigate("/dashboard")}>Get Started</button>
             <button className="secondary">Learn More</button>
           </div>
         </header>

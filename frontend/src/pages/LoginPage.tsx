@@ -12,7 +12,7 @@ const LoginPage = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch("/api/login", {
+      const res = await fetch("http://localhost:800/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -27,7 +27,7 @@ const LoginPage = () => {
       }
       
       alert("Login successful!");
-      navigate("/");
+      navigate("/dashboard");
 
     } catch (err) {
       console.error(err);
