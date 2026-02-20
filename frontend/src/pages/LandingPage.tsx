@@ -5,7 +5,6 @@ import "../styles/landing.css";
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-
   return (
     <>
       <Navbar />
