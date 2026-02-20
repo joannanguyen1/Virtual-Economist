@@ -21,6 +21,9 @@ dependencies = [
   "numpy>=1.26",
   "pandas>=2.2",
   "tenacity>=8.2",
+  "psycopg2-binary>=2.9.11",
+  "boto3>=1.42.53",
+  "botocore[crt]>=1.42.53",
 ]
 
 [dependency-groups]
