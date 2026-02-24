@@ -6,6 +6,7 @@ import SignupPage from "./pages/SignupPage";
 import Dashboard from "./pages/Dashboard";
 import HousingAgent from "./pages/HousingAgent";
 import MarketAgent from "./pages/MarketAgent";
+import VerifyEmail from "./pages/VerifyEmail";
 
 const App: React.FC = () => {
   return (
@@ -17,6 +18,7 @@ const App: React.FC = () => {
         <Route path="/market" element={<MarketAgent />} />
         <Route path="/login" element = {<LoginPage />} />
         <Route path="/signup" element = {<SignupPage />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
     </Routes>
     </BrowserRouter>
   )
