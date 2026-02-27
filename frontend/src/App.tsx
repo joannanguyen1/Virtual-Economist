@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import HousingAgent from "./pages/HousingAgent";
+import About from './pages/About';
 import MarketAgent from "./pages/MarketAgent";
 
 const App: React.FC = () => {
@@ -13,6 +14,7 @@ const App: React.FC = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/housing" element={<HousingAgent />} />
         <Route path="/market" element={<MarketAgent />} />
+        <Route path="/about" element={<About />} />
       </Routes>
     </Router>
   );
