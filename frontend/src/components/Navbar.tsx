@@ -23,6 +23,8 @@ const Navbar: React.FC = () => {
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/housing">Housing</Link>
             <Link to="/market">Market</Link>
+            <Link to="/about">About</Link>
+
           </>
         )}
       </div>
