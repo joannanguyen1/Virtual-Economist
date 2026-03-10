@@ -1,17 +1,8 @@
 import React from "react";
-import Navbar from "../components/Navbar";
-import ChatInterface from "../components/ChatInterface";
-import "../styles/dashboard.css"; // reusing dashboard layout for container
+import { Navigate } from "react-router-dom";
 
 const HousingAgent: React.FC = () => {
-  return (
-    <>
-      <Navbar />
-      <div className="dashboard"> {/* Reusing dashboard container styles */}
-        <ChatInterface agentName="Housing & City Agent" />
-      </div>
-    </>
-  );
+  return <Navigate to="/assistant?mode=housing" replace />;
 };
 
 export default HousingAgent;

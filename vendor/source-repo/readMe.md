@@ -9,10 +9,10 @@ Virtual Economists is a chat-based web application featuring two AI-powered agen
 
 ## 🔧 Project Overview
 
-**What it does**:  
+**What it does**:
 Two AI agents answer questions related to either U.S. housing/city information or stock/market data using natural language.
 
-**Main Use Case**:  
+**Main Use Case**:
 Allows users to gain insights into U.S. cities (e.g., home prices, weather) or make smarter investing decisions through semantic and keyword-based queries.
 
 ---
@@ -62,7 +62,7 @@ Allows users to gain insights into U.S. cities (e.g., home prices, weather) or m
 - _Can you provide me with stocks in the health sector that analysts recommend buying?_
 - _Show me stocks across sectors with high institutional ownership and low insider ownership._
 
-**Processing**:  
+**Processing**:
 Natural language is converted to SQL using OpenAI. Embeddings help with semantic context and similarity search.
 
 ---

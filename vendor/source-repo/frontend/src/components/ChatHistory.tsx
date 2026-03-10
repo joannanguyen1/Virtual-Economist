@@ -38,11 +38,11 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
 
   return (
     <div className="chat-history">
-      
+
         <button className="new-chat-button" onClick={onNewChat}>
           + New Chat
         </button>
-    
+
 
       <div className="history-list">
         {history.length === 0 ? (

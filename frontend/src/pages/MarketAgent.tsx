@@ -1,17 +1,8 @@
 import React from "react";
-import Navbar from "../components/Navbar";
-import ChatInterface from "../components/ChatInterface";
-import "../styles/dashboard.css";
+import { Navigate } from "react-router-dom";
 
 const MarketAgent: React.FC = () => {
-  return (
-    <>
-      <Navbar />
-      <div className="dashboard">
-        <ChatInterface agentName="Stock & Market Agent" />
-      </div>
-    </>
-  );
+  return <Navigate to="/assistant?mode=market" replace />;
 };
 
 export default MarketAgent;

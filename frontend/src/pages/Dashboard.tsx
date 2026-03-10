@@ -6,51 +6,80 @@ import "../styles/dashboard.css";
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  const agents = [
+  const workspaces = [
+    {
+      id: "assistant",
+      name: "Unified Assistant",
+      description:
+        "Ask one question and let the app route across housing, city economics, weather, stocks, and macro data in a single workspace.",
+      eyebrow: "Recommended",
+      route: "/assistant",
+    },
     {
       id: "housing",
-      name: "Housing & City Agent",
+      name: "Housing Focus",
       description:
-        "Analyze real estate trends, cost of living, weather data, and income statistics across various U.S. cities to find your perfect place.",
-      icon: "🏘️",
-      route: "/housing",
+        "Pin the assistant to home values, inventory, rents, affordability, incomes, and weather across U.S. cities.",
+      eyebrow: "Pinned mode",
+      route: "/assistant?mode=housing",
     },
     {
       id: "market",
-      name: "Stock & Market Agent",
+      name: "Market Focus",
       description:
-        "Get insights on stock performance, analyst recommendations, insider ownership, and sector trends to make informed investment decisions.",
-      icon: "📈",
-      route: "/market",
+        "Pin the assistant to stock quotes, analyst recommendations, sector screens, and macro indicators.",
+      eyebrow: "Pinned mode",
+      route: "/assistant?mode=market",
     },
   ];
 
   return (
     <>
       <Navbar />
-      <div className="dashboard">
-        <header className="dashboard-header">
-          <h1>Welcome to Virtual Economist</h1>
-          <p>Select an intelligent agent to start your analysis</p>
-        </header>
+      <main className="dashboard-page">
+        <section className="dashboard-hero">
+          <p className="dashboard-eyebrow">Unified research workflow</p>
+          <h1>One assistant, two specialties, one cleaner interface.</h1>
+          <p>
+            Start in auto mode for most questions. Pin housing or market mode
+            only when you want tighter routing for that domain.
+          </p>
 
-        <div className="agents-grid">
-          {agents.map((agent) => (
-            <div
-              key={agent.id}
-              className="agent-card"
-              onClick={() => navigate(agent.route)}
+          <div className="dashboard-actions">
+            <button
+              type="button"
+              className="dashboard-primary-button"
+              onClick={() => navigate("/assistant")}
             >
-              <div className="agent-icon">{agent.icon}</div>
-              <h2>{agent.name}</h2>
-              <p>{agent.description}</p>
+              Open assistant
+            </button>
+            <button
+              type="button"
+              className="dashboard-secondary-button"
+              onClick={() => navigate("/assistant?mode=housing")}
+            >
+              Start with housing
+            </button>
+          </div>
+        </section>
+
+        <section className="agents-grid">
+          {workspaces.map((workspace) => (
+            <div
+              key={workspace.id}
+              className="agent-card"
+              onClick={() => navigate(workspace.route)}
+            >
+              <p className="agent-eyebrow">{workspace.eyebrow}</p>
+              <h2>{workspace.name}</h2>
+              <p>{workspace.description}</p>
               <span className="agent-link">
-                Launch Agent <span>→</span>
+                Open workspace <span>→</span>
               </span>
             </div>
           ))}
-        </div>
-      </div>
+        </section>
+      </main>
     </>
   );
 };

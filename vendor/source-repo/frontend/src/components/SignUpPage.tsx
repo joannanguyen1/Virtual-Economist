@@ -46,7 +46,7 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup }) => {
 
       // Store the token in localStorage
       localStorage.setItem("token", data.token);
-      
+
       // Create a user object with the information we have
       const user: User = {
         id: data.userId || username, // Use username as ID if userId not provided
@@ -65,9 +65,9 @@ const SignupPage: React.FC<SignupPageProps> = ({ onSignup }) => {
     <div className="signup-container">
       <h2>Sign Up</h2>
       <form onSubmit={handleSubmit}>
-        <input 
-          type="text" 
-          placeholder="Username" 
+        <input
+          type="text"
+          placeholder="Username"
           className="signup-input"
           value={username}
           onChange={(e) => setUsername(e.target.value)}

@@ -6,10 +6,9 @@ import markdown  # Convert Markdown to HTML
 dotenv.load_dotenv()
 
 chat_model = ChatOpenAI(
-    model="gpt-3.5-turbo", 
-    temperature=0, 
-    openai_api_key=os.getenv("OPENAI_API_KEY")
+    model="gpt-3.5-turbo", temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")
 )
+
 
 def query_chatbot(messages):
     try:

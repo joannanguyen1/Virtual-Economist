@@ -1,12 +1,12 @@
-# Backend for Economic Chatbot  
+# Backend for Economic Chatbot
 
-This backend project provides the functionality for a chatbot that answers economic questions by leveraging datasets and natural language processing.  
+This backend project provides the functionality for a chatbot that answers economic questions by leveraging datasets and natural language processing.
 
 ---
 
 ## 🔌 API Reference
 
-All endpoints are under `http://localhost:8000` and expect a JSON request/response.  
+All endpoints are under `http://localhost:8000` and expect a JSON request/response.
 Authenticated routes require a valid JWT in the `Authorization: Bearer <token>` header.
 
 ### Authentication
@@ -35,20 +35,20 @@ Authenticated routes require a valid JWT in the `Authorization: Bearer <token>` 
 
 ---
 
-## Requirements  
+## Requirements
 
-### Prerequisites  
-Before running the application, ensure you have the following:  
+### Prerequisites
+Before running the application, ensure you have the following:
 - **Python 3.12**
-- `pip` (Python package installer) available.  
+- `pip` (Python package installer) available.
 
-### Dependencies  
-The required Python packages are listed in the `requirements.txt` file.  
+### Dependencies
+The required Python packages are listed in the `requirements.txt` file.
 
-To install the dependencies:  
-1. Open a terminal and navigate to the `backend` folder.  
-2. Run the following command:  
-   ```bash  
+To install the dependencies:
+1. Open a terminal and navigate to the `backend` folder.
+2. Run the following command:
+   ```bash
    pip install -r requirements.txt
 ### Running backend
 1. Navigate to the backend/app folder in your terminal.

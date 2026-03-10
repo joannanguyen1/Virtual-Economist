@@ -9,10 +9,10 @@ messages = [
     ),
 ]
 
+
 def get_response(human_messages):
     print(human_messages)
 
     messages.append(HumanMessage(content=human_messages))
     response = query_chatbot(messages)
     return response
-

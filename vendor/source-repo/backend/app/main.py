@@ -2,8 +2,9 @@ import sys
 import json
 from services.database.query import query_companies, query_data_with_generated_sql
 
+
 def handler(question, agentSelection="None"):
-    if question.lower() == 'q':
+    if question.lower() == "q":
         return "Goodbye!"
     if agentSelection.get("stockAgent"):
         return query_companies(question)
@@ -11,6 +12,7 @@ def handler(question, agentSelection="None"):
         return query_data_with_generated_sql(question)
     else:
         return "Unknown agent selected."
+
 
 if __name__ == "__main__":
     """
@@ -31,7 +33,7 @@ if __name__ == "__main__":
         print("Interactive mode. Type 'q' to quit.\n")
         while True:
             question = input("Your question: ")
-            if question.lower() == 'q':
+            if question.lower() == "q":
                 print("Goodbye!")
                 break
             testAgentSelection = {"stockAgent": False, "housingAgent": True}
