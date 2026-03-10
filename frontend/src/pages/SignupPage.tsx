@@ -27,7 +27,7 @@ const SignupPage = () => {
         return;
       }
 
-      alert("Signup successful!");
+      alert("Account created! Check your email for the verification link, then log in.");
       navigate("/login"); 
 
     } catch (err) {
