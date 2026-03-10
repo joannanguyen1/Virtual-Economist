@@ -14,7 +14,7 @@ const Navbar: React.FC = () => {
       <div className="navbar-links">
         {isLanding ? (
           <>
-            <a href="#features">Features</a>
+            <Link to="/features">Features</Link>
             <a href="#about">About</a>
             <Link to="/login">Login</Link>
           </>
