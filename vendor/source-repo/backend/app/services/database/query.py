@@ -2,17 +2,17 @@ import psycopg2
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain.schema import HumanMessage
 from dotenv import load_dotenv
-from sqlalchemy.sql import text
 import openai
 import os
+
 load_dotenv()
 
 db_config = {
-    "dbname": os.getenv('DB_NAME'),
-    "user": os.getenv('DB_USER'),
-    "password": os.getenv('DB_PASSWORD'),
-    "host": os.getenv('DB_HOST'),
-    "port": os.getenv('DB_PORT')
+    "dbname": os.getenv("DB_NAME"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "host": os.getenv("DB_HOST"),
+    "port": os.getenv("DB_PORT"),
 }
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
@@ -20,6 +20,7 @@ client = openai
 
 embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002")
 llm = ChatOpenAI(model="gpt-4o", temperature=0)
+
 
 def extract_city_from_question(question):
     """
@@ -37,10 +38,13 @@ def extract_city_from_question(question):
     response = client.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": "You are an expert in classifying housing-related questions and extracting city names."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are an expert in classifying housing-related questions and extracting city names.",
+            },
+            {"role": "user", "content": prompt},
         ],
-        temperature=0
+        temperature=0,
     )
 
     # Extract the city from the response content
@@ -128,9 +132,9 @@ def query_data_with_generated_sql(question):
     try:
         sql_query = generate_sql_query(question)
 
-
-        clean_sql_query = sql_query.strip().removeprefix("```sql").removesuffix("```").strip()
-
+        clean_sql_query = (
+            sql_query.strip().removeprefix("```sql").removesuffix("```").strip()
+        )
 
         conn = psycopg2.connect(**db_config)
         cur = conn.cursor()
@@ -141,14 +145,12 @@ def query_data_with_generated_sql(question):
         if not results:
             return "No relevant information found in the database."
 
-
         context_lines = []
         for row in results[:20]:
             line = "\n".join(f"{col}: {val}" for col, val in zip(column_names, row))
             context_lines.append(line)
 
         context = "\n\n".join(context_lines)
-
 
         prompt = f"""
         You are a helpful housing assistant. You are answering a user’s question using real U.S. housing data.
@@ -169,7 +171,7 @@ def query_data_with_generated_sql(question):
         User's Question:
         "{question}"
         """
-                
+
         # Generate the response from the LLM
         response = llm([HumanMessage(content=prompt)])
         return response.content
@@ -178,30 +180,36 @@ def query_data_with_generated_sql(question):
         return f"An error occurred: {e}"
 
     finally:
-        if 'cur' in locals(): cur.close()
-        if 'conn' in locals(): conn.close()
+        if "cur" in locals():
+            cur.close()
+        if "conn" in locals():
+            conn.close()
 
 
 def extract_company_from_question(question):
     prompt = f"""
     Question: "{question}"
 
-    Please extract the company name from the question. If a company is mentioned, return it. 
-    If no company is found, return "No company found". 
+    Please extract the company name from the question. If a company is mentioned, return it.
+    If no company is found, return "No company found".
     Just return the company name with no extra context.
     """
 
     response = client.chat.completions.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": "You are an expert at identifying public company names in investment-related questions."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are an expert at identifying public company names in investment-related questions.",
+            },
+            {"role": "user", "content": prompt},
         ],
-        temperature=0
+        temperature=0,
     )
 
     company = response.choices[0].message.content.strip()
     return None if company.lower() == "no company found" else company
+
 
 def generate_company_sql_query(question):
     prompt = f"""
@@ -230,6 +238,7 @@ def generate_company_sql_query(question):
     response = llm([HumanMessage(content=prompt)])
     return response.content.strip().strip("```sql").strip("```")
 
+
 def query_companies(question):
     try:
         sql_query = generate_company_sql_query(question)
@@ -242,15 +251,17 @@ def query_companies(question):
         if not results:
             return "No relevant company data found."
 
-        context = "\n".join([
-            f"Company: {row[0]}\n"
-            f"Sector: {row[1]}\n"
-            f"Industry: {row[2]}\n"
-            f"Recommendation: {row[3]}\n"
-            f"Insider Ownership: {row[4]}\n"
-            f"Institutional Ownership: {row[5]}\n"
-            for row in results
-        ])
+        context = "\n".join(
+            [
+                f"Company: {row[0]}\n"
+                f"Sector: {row[1]}\n"
+                f"Industry: {row[2]}\n"
+                f"Recommendation: {row[3]}\n"
+                f"Insider Ownership: {row[4]}\n"
+                f"Institutional Ownership: {row[5]}\n"
+                for row in results
+            ]
+        )
 
         prompt = (
             f"Here are details about companies:\n\n{context}\n\n"
@@ -264,5 +275,7 @@ def query_companies(question):
         return f"An error occurred: {e}"
 
     finally:
-        if 'cur' in locals(): cur.close()
-        if 'conn' in locals(): conn.close()
+        if "cur" in locals():
+            cur.close()
+        if "conn" in locals():
+            conn.close()

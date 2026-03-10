@@ -115,7 +115,7 @@ const getAllChatHistory = async (userId) => {
   }
 
   const chatsResult = await pool.query(
-    `SELECT c.chat_id, c.started_at, c.last_updated, 
+    `SELECT c.chat_id, c.started_at, c.last_updated,
             m.message_text, m.timestamp, m.is_client
      FROM chats c
      LEFT JOIN messages m ON c.chat_id = m.chat_id
@@ -125,7 +125,7 @@ const getAllChatHistory = async (userId) => {
   );
 
   const chatMap = new Map();
-  
+
   chatsResult.rows.forEach(row => {
     if (!chatMap.has(row.chat_id)) {
       chatMap.set(row.chat_id, {
@@ -135,7 +135,7 @@ const getAllChatHistory = async (userId) => {
         messages: []
       });
     }
-    
+
     if (row.message_text) {
       chatMap.get(row.chat_id).messages.push({
         message: row.message_text,

@@ -150,7 +150,7 @@ const App: React.FC = () => {
       );
 
       let newChat: ChatSession;
-      
+
       if (response.ok) {
         const newSession = await response.json();
         newChat = {
@@ -243,7 +243,7 @@ const App: React.FC = () => {
       localStorage.removeItem("chatHistory");
       localStorage.removeItem("activeChat");
       localStorage.removeItem("messages");
-      
+
       setUser(null);
       setHistory([]);
       setActiveChat(null);
@@ -268,7 +268,7 @@ const App: React.FC = () => {
         `http://localhost:8000/chatHistory/history/${id}`,
         { headers }
       );
-      
+
       if (response.ok) {
         const chatData = await response.json();
         const formattedMessages: Message[] = chatData.messages.map((msg: any) => ({
@@ -276,10 +276,10 @@ const App: React.FC = () => {
           content: msg.message,
         }));
         setMessages(formattedMessages);
-        
-        setHistory(prevHistory => 
-          prevHistory.map(chat => 
-            chat.id === id 
+
+        setHistory(prevHistory =>
+          prevHistory.map(chat =>
+            chat.id === id
               ? { ...chat, messages: formattedMessages }
               : chat
           )
@@ -307,9 +307,9 @@ const App: React.FC = () => {
     setMessages(updated);
     setInputValue("");
 
-    setHistory(prevHistory => 
-      prevHistory.map(chat => 
-        chat.id === currentChatId 
+    setHistory(prevHistory =>
+      prevHistory.map(chat =>
+        chat.id === currentChatId
           ? { ...chat, messages: updated }
           : chat
       )
@@ -319,10 +319,10 @@ const App: React.FC = () => {
       const botMessage: Message = { sender: "chatbot", content: "Please select an agent first." };
       const finalMessages: Message[] = [...updated, botMessage];
       setMessages(finalMessages);
-      
-      setHistory(prevHistory => 
-        prevHistory.map(chat => 
-          chat.id === currentChatId 
+
+      setHistory(prevHistory =>
+        prevHistory.map(chat =>
+          chat.id === currentChatId
             ? { ...chat, messages: finalMessages }
             : chat
         )
@@ -363,10 +363,10 @@ const App: React.FC = () => {
       const botMessage: Message = { sender: "chatbot", content: data.answer || "I didn't understand that." };
       const finalMessages: Message[] = [...updated, botMessage];
       setMessages(finalMessages);
-      
-      setHistory(prevHistory => 
-        prevHistory.map(chat => 
-          chat.id === currentChatId 
+
+      setHistory(prevHistory =>
+        prevHistory.map(chat =>
+          chat.id === currentChatId
             ? { ...chat, messages: finalMessages }
             : chat
         )
@@ -376,10 +376,10 @@ const App: React.FC = () => {
       const errorMessage: Message = { sender: "chatbot", content: "Sorry, I encountered an error. Please try again." };
       const finalMessages: Message[] = [...updated, errorMessage];
       setMessages(finalMessages);
-      
-      setHistory(prevHistory => 
-        prevHistory.map(chat => 
-          chat.id === currentChatId 
+
+      setHistory(prevHistory =>
+        prevHistory.map(chat =>
+          chat.id === currentChatId
             ? { ...chat, messages: finalMessages }
             : chat
         )

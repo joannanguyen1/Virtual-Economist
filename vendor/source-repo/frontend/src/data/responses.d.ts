@@ -7,7 +7,7 @@ interface Responses {
     regional_data: { [key: string]: string };
     custom_calculations: { [key: string]: string };
   }
-  
+
   declare const responses: { responses: Responses };
   export default responses;
-  
+

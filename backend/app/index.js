@@ -15,4 +15,3 @@ app.use("/api", authRoutes);
 app.listen(800, () => {
   console.log("Backend running on port 800");
 });
-

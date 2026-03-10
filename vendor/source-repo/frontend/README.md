@@ -50,16 +50,16 @@ frontend/
 
 ## 🛠 Getting Started
 
-1. **Clone the repository**  
+1. **Clone the repository**
    git clone https://github.com/DU-Virtual-Economist/Virtual-Economist.git
 
-2. **Navigate to the frontend folder**  
+2. **Navigate to the frontend folder**
    cd Virtual-Economist/frontend
 
-3. **Install dependencies**  
+3. **Install dependencies**
    npm install
 
-4. **Start the development server**  
+4. **Start the development server**
    npm start
 
 > **Note:** Ensure the backend API is running and accessible.

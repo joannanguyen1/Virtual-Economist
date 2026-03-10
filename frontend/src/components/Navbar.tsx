@@ -1,28 +1,97 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { clearAuthSession, getStoredUser } from "../lib/auth";
 import "../styles/navbar.css";
 
 const Navbar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isLanding = location.pathname === "/";
+  const [user, setUser] = useState(() => getStoredUser());
+
+  useEffect(() => {
+    const syncUser = () => {
+      setUser(getStoredUser());
+    };
+
+    window.addEventListener("storage", syncUser);
+    window.addEventListener("auth-changed", syncUser);
+
+    return () => {
+      window.removeEventListener("storage", syncUser);
+      window.removeEventListener("auth-changed", syncUser);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    clearAuthSession();
+    navigate("/");
+  };
 
   return (
     <nav className="navbar">
-      <Link to="/" className="navbar-brand" style={{ color: 'white', textDecoration: 'none' }}>
+      <Link to="/" className="navbar-brand">
         Virtual Economist
       </Link>
       <div className="navbar-links">
         {isLanding ? (
           <>
-            <a href="#features">Features</a>
-            <a href="#about">About</a>
-            <Link to="/login">Login</Link>
+            <NavLink to="/assistant" className="navbar-link navbar-link-primary">
+              Assistant
+            </NavLink>
+            {user ? (
+              <>
+                <span className="navbar-user-pill">{user.username}</span>
+                <button
+                  type="button"
+                  className="navbar-link navbar-logout-button"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <NavLink to="/login" className="navbar-link">
+                Login
+              </NavLink>
+            )}
           </>
         ) : (
           <>
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/housing">Housing</Link>
-            <Link to="/market">Market</Link>
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                `navbar-link ${isActive ? "active" : ""}`.trim()
+              }
+            >
+              Overview
+            </NavLink>
+            <NavLink
+              to="/assistant"
+              className={({ isActive }) =>
+                `navbar-link navbar-link-primary ${
+                  isActive ? "active" : ""
+                }`.trim()
+              }
+            >
+              Assistant
+            </NavLink>
+            {user ? (
+              <>
+                <span className="navbar-user-pill">{user.username}</span>
+                <button
+                  type="button"
+                  className="navbar-link navbar-logout-button"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <NavLink to="/login" className="navbar-link">
+                Login
+              </NavLink>
+            )}
           </>
         )}
       </div>

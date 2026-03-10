@@ -1,12 +1,23 @@
 from app import main
 import json
 import argparse
+
 print("Starting local.py")
 
+
 def define_args():
-    parser = argparse.ArgumentParser(prog="local", description="Run the application locally.")
-    parser.add_argument("filename", nargs="?",type=str, help="The filename to process", default="mock_files/human_message.json")
+    parser = argparse.ArgumentParser(
+        prog="local", description="Run the application locally."
+    )
+    parser.add_argument(
+        "filename",
+        nargs="?",
+        type=str,
+        help="The filename to process",
+        default="mock_files/human_message.json",
+    )
     return parser
+
 
 def local(args):
     try:

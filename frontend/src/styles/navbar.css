@@ -1,34 +1,95 @@
 .navbar {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    height: 64px;
-    background-color: rgba(2, 6, 23, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-    color: white;
-    z-index: 1000;
-    backdrop-filter: blur(8px);
+  position: fixed;
+  inset: 0 0 auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(7, 17, 27, 0.72);
+  border-bottom: 1px solid rgba(148, 180, 194, 0.12);
+  backdrop-filter: blur(18px);
+  z-index: 1000;
+}
+
+.navbar-brand {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.navbar-link {
+  padding: 0.72rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--muted-text);
+  text-decoration: none;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.navbar-link:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.navbar-link.active {
+  color: var(--text-primary);
+  border-color: rgba(148, 180, 194, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.navbar-link-primary {
+  border-color: rgba(47, 182, 163, 0.24);
+  background: rgba(47, 182, 163, 0.12);
+}
+
+.navbar-user-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0 0.95rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.navbar-logout-button {
+  cursor: pointer;
+  background: transparent;
+}
+
+@media (max-width: 760px) {
+  .navbar {
+    padding: 0.85rem 1rem;
   }
-  
+
   .navbar-brand {
-    font-weight: bold;
     font-size: 1.25rem;
   }
-  
+
   .navbar-links {
-    display: flex;
-    gap: 1.5rem;
+    gap: 0.4rem;
   }
-  
-  .navbar-links a {
-    color: #e5e7eb;
-    text-decoration: none;
+
+  .navbar-link {
+    padding: 0.62rem 0.85rem;
+    font-size: 0.92rem;
   }
-  
-  .navbar-links a:hover {
-    color: #60a5fa;
+
+  .navbar-user-pill {
+    display: none;
   }
-  
+}

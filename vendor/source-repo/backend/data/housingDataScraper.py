@@ -2,7 +2,6 @@ import requests
 import json
 import os
 import psycopg2
-from psycopg2 import pool
 from openai import OpenAI
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -23,12 +22,19 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 # Setup PostgreSQL Connection Pool (better performance)
 db_pool = psycopg2.pool.SimpleConnectionPool(
-    1, 10, host=DB_HOST, port=DB_PORT, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD
+    1,
+    10,
+    host=DB_HOST,
+    port=DB_PORT,
+    dbname=DB_NAME,
+    user=DB_USER,
+    password=DB_PASSWORD,
 )
 
 # Census API Variables
-variables = ['B19013_001E', 'B25077_001E']
+variables = ["B19013_001E", "B25077_001E"]
 url = f'https://api.census.gov/data/2023/acs/acs5?get=NAME,{",".join(variables)}&for=place:*&in=state:*&key={API_KEY}'
+
 
 def generate_embedding_parallel(texts):
     """Generate embeddings for a list of texts in parallel using OpenAI API."""
@@ -36,17 +42,25 @@ def generate_embedding_parallel(texts):
 
     embeddings = []
     with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_text = {executor.submit(client.embeddings.create, model="text-embedding-ada-002", input=text): text for text in texts}
+        future_to_text = {
+            executor.submit(
+                client.embeddings.create, model="text-embedding-ada-002", input=text
+            ): text
+            for text in texts
+        }
 
         for future in as_completed(future_to_text):
             try:
                 result = future.result()
                 embeddings.append(result.data[0].embedding)
             except Exception as e:
-                print(f"Embedding generation failed for '{future_to_text[future]}': {e}")
+                print(
+                    f"Embedding generation failed for '{future_to_text[future]}': {e}"
+                )
                 embeddings.append(None)  # Maintain indexing even if an embedding fails
 
     return embeddings
+
 
 def batch_insert_embeddings(batch_data):
     """Insert a batch of embeddings into PostgreSQL using connection pooling."""
@@ -65,11 +79,12 @@ def batch_insert_embeddings(batch_data):
     finally:
         db_pool.putconn(conn)
 
+
 def get_data():
     """Fetch Census API data, process it, and store embeddings in PostgreSQL."""
     response = requests.get(url)
     if response.status_code != 200:
-        print(f'Error: Unable to fetch data (Status code: {response.status_code})')
+        print(f"Error: Unable to fetch data (Status code: {response.status_code})")
         return
 
     data = response.json()
@@ -95,9 +110,9 @@ def get_data():
             continue
 
         metadata = {
-            'city': city,
-            'median_household_income': median_household_income,
-            'median_home_value': median_home_value,
+            "city": city,
+            "median_household_income": median_household_income,
+            "median_home_value": median_home_value,
         }
 
         texts_to_embed.append(city)
@@ -106,7 +121,12 @@ def get_data():
         # Process batch when batch size is reached
         if len(texts_to_embed) >= batch_size:
             embeddings = generate_embedding_parallel(texts_to_embed)
-            batch_data_with_embeddings = list(zip(embeddings, [json.dumps(metadata) for _, metadata in batch_data if embeddings]))
+            batch_data_with_embeddings = list(
+                zip(
+                    embeddings,
+                    [json.dumps(metadata) for _, metadata in batch_data if embeddings],
+                )
+            )
 
             batch_insert_embeddings(batch_data_with_embeddings)
             batch_data = []
@@ -115,9 +135,15 @@ def get_data():
     # Insert remaining data
     if batch_data:
         embeddings = generate_embedding_parallel(texts_to_embed)
-        batch_data_with_embeddings = list(zip(embeddings, [json.dumps(metadata) for _, metadata in batch_data if embeddings]))
+        batch_data_with_embeddings = list(
+            zip(
+                embeddings,
+                [json.dumps(metadata) for _, metadata in batch_data if embeddings],
+            )
+        )
 
         batch_insert_embeddings(batch_data_with_embeddings)
+
 
 if __name__ == "__main__":
     get_data()

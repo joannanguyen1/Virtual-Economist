@@ -11,10 +11,12 @@ db_config = {
     "user": os.getenv("DB_USER"),
     "password": os.getenv("DB_PASSWORD"),
     "host": os.getenv("DB_HOST"),
-    "port": os.getenv("DB_PORT")
+    "port": os.getenv("DB_PORT"),
 }
 
-embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002", api_key=os.getenv("OPEN_AI_KEY"))
+embedding_model = OpenAIEmbeddings(
+    model="text-embedding-ada-002", api_key=os.getenv("OPEN_AI_KEY")
+)
 
 with open("../dummy_data/company_data.json", "r") as f:
     companies = json.load(f)
@@ -52,7 +54,7 @@ try:
             "description": description,
             "recommendation": recommendation,
             "insider_ownership": insider_ownership,
-            "institutional_ownership": institutional_ownership
+            "institutional_ownership": institutional_ownership,
         }
 
         combined_text = f"""
@@ -74,7 +76,9 @@ try:
             INSERT INTO embeddings (vector_column, text, metadata)
             VALUES (%s, %s, %s);
         """
-        cur.execute(insert_query, (json.dumps(vector), combined_text, json.dumps(metadata)))
+        cur.execute(
+            insert_query, (json.dumps(vector), combined_text, json.dumps(metadata))
+        )
         print("Inserted:", company["name"])
 
     conn.commit()
