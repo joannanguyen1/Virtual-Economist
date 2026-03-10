@@ -5,8 +5,10 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import Dashboard from "./pages/Dashboard";
 import HousingAgent from "./pages/HousingAgent";
+import About from './pages/About';
 import MarketAgent from "./pages/MarketAgent";
 import Features from "./pages/Features";
+import VerifyEmail from "./pages/VerifyEmail";
 
 const App: React.FC = () => {
   return (
@@ -16,9 +18,11 @@ const App: React.FC = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/housing" element={<HousingAgent />} />
         <Route path="/market" element={<MarketAgent />} />
+        <Route path="/about" element={<About />} />
         <Route path="/login" element = {<LoginPage />} />
         <Route path="/signup" element = {<SignupPage />} />
         <Route path="/features" element={<Features />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
     </Routes>
     </BrowserRouter>
   )

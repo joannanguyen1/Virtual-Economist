@@ -14,15 +14,18 @@ const Navbar: React.FC = () => {
       <div className="navbar-links">
         {isLanding ? (
           <>
+            
             <Link to="/features">Features</Link>
-            <a href="#about">About</a>
-            <Link to="/login">Login</Link>
+            <Link to="/about">About</Link>
+            <Link to="/dashboard">Login</Link>
           </>
         ) : (
           <>
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/housing">Housing</Link>
             <Link to="/market">Market</Link>
+            <Link to="/about">About</Link>
+
           </>
         )}
       </div>
