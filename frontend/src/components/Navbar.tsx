@@ -36,6 +36,12 @@ const Navbar: React.FC = () => {
       <div className="navbar-links">
         {isLanding ? (
           <>
+            <NavLink to="/features" className="navbar-link">
+              Features
+            </NavLink>
+            <NavLink to="/about" className="navbar-link">
+              About
+            </NavLink>
             <NavLink to="/assistant" className="navbar-link navbar-link-primary">
               Assistant
             </NavLink>
@@ -60,21 +66,23 @@ const Navbar: React.FC = () => {
           <>
             <NavLink
               to="/dashboard"
-              className={({ isActive }) =>
-                `navbar-link ${isActive ? "active" : ""}`.trim()
-              }
+              className={({ isActive }) => `navbar-link ${isActive ? "active" : ""}`.trim()}
             >
               Overview
             </NavLink>
             <NavLink
               to="/assistant"
               className={({ isActive }) =>
-                `navbar-link navbar-link-primary ${
-                  isActive ? "active" : ""
-                }`.trim()
+                `navbar-link navbar-link-primary ${isActive ? "active" : ""}`.trim()
               }
             >
               Assistant
+            </NavLink>
+            <NavLink to="/features" className="navbar-link">
+              Features
+            </NavLink>
+            <NavLink to="/about" className="navbar-link">
+              About
             </NavLink>
             {user ? (
               <>

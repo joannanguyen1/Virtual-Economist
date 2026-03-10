@@ -1,0 +1,80 @@
+.features-page {
+  min-height: 100vh;
+  padding: 80px 2rem 2.5rem 2rem;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: white;
+}
+
+.features-header {
+  margin-bottom: 2rem;
+  text-align: center;
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.features-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.features-header p {
+  color: #94a3b8;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 2rem;
+  transition: transform 0.2s, border-color 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  border-color: #60a5fa;
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.feature-card h2 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.5rem;
+  color: #f8fafc;
+}
+
+.feature-card p {
+  color: #cbd5e1;
+  line-height: 1.65;
+  margin: 0 0 1rem 0;
+  flex-grow: 1;
+}
+
+.feature-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.feature-list li {
+  color: #cbd5e1;
+  line-height: 1.7;
+  margin: 0.35rem 0;
+}
