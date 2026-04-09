@@ -70,9 +70,16 @@ def load_db_config() -> DBConfig:
 @lru_cache(maxsize=1)
 def _get_db_password(secret_arn: str, region: str) -> str:
     """
-    Fetch + cache the DB password from AWS Secrets Manager.
+    Resolve the DB password.
+
+    Prefer DB_PASSWORD from the local environment so development works without
+    AWS credentials. Fall back to Secrets Manager when DB_PASSWORD is absent.
     Cache lasts for process lifetime; restart process to refresh.
     """
+    direct_password = os.getenv("DB_PASSWORD")
+    if direct_password and direct_password != "ADD_YOUR_GENERATED_SECRET":
+        return direct_password
+
     sm = boto3.client("secretsmanager", region_name=region)
     secret_str = sm.get_secret_value(SecretId=secret_arn)["SecretString"]
     secret = json.loads(secret_str)
@@ -99,6 +106,7 @@ def get_conn(cfg: DBConfig | None = None) -> PGConnection:
         password=password,
         sslmode=cfg.sslmode,
         sslrootcert=cfg.sslrootcert,
+        connect_timeout=8,
     )
 
 

@@ -96,6 +96,19 @@ def test_parse_city_state_uses_db_inference_for_city_only(
     assert live_apis._parse_city_state("Philadelphia") == ("Philadelphia", "42")
 
 
+def test_parse_city_state_falls_back_to_weather_geocode_for_ambiguous_city(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(live_apis, "_infer_state_fips_from_housing_db", lambda city: "")
+    monkeypatch.setattr(
+        live_apis,
+        "_infer_state_fips_from_weather_geocode",
+        lambda city: "48",
+    )
+
+    assert live_apis._parse_city_state("Austin") == ("Austin", "48")
+
+
 def test_census_city_snapshot_retries_without_invalid_key(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

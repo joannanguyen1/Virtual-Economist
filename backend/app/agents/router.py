@@ -56,6 +56,45 @@ _OUT_OF_SCOPE_ANSWER = (
     "If you want, ask a question in one of those areas."
 )
 
+_MARKET_CONTEXT_TERMS = (
+    "stock",
+    "stocks",
+    "price",
+    "prices",
+    "quote",
+    "quotes",
+    "high",
+    "low",
+    "open",
+    "close",
+    "return",
+    "returns",
+    "volatility",
+    "sharpe",
+    "ratio",
+    "history",
+    "historical",
+    "trend",
+    "trends",
+    "drawdown",
+    "ohlcv",
+)
+_MARKET_CONTEXT_PATTERN = "|".join(
+    sorted((re.escape(term) for term in _MARKET_CONTEXT_TERMS), key=len, reverse=True)
+)
+_MERGED_MARKET_TERM_RE = re.compile(
+    rf"\b([a-z]{{3,}}?)({_MARKET_CONTEXT_PATTERN})\b",
+    re.IGNORECASE,
+)
+_TRAILING_PLURAL_MARKET_RE = re.compile(
+    rf"\b([a-z]{{4,}})s ((?:{_MARKET_CONTEXT_PATTERN})\b)",
+    re.IGNORECASE,
+)
+_TIME_WINDOW_RE = re.compile(
+    r"\b(?:last|past)\s+(?:\d+\s+)?(?:day|days|week|weeks|month|months|year|years)\b",
+    re.IGNORECASE,
+)
+
 _MARKET_OVERRIDE_KW = {
     "stock",
     "stocks",
@@ -78,8 +117,21 @@ _MARKET_OVERRIDE_KW = {
     "industry",
     "portfolio",
     "dividend",
+    "dividends",
     "ipo",
     "trading",
+    "price history",
+    "historical price",
+    "historical prices",
+    "ohlcv",
+    "return",
+    "returns",
+    "volatility",
+    "sharpe",
+    "drawdown",
+    "max drawdown",
+    "risk-adjusted",
+    "risk adjusted",
     "unemployment",
     "inflation",
     "cpi",
@@ -130,9 +182,41 @@ def _contains_keyword(text: str, keyword: str) -> bool:
     return re.search(rf"\b{re.escape(keyword)}\b", text) is not None
 
 
+def _normalize_question_text(question: str) -> str:
+    """Normalize obvious merged words and possessives so routing is typo-tolerant."""
+    normalized = question.strip()
+    normalized = re.sub(r"(?i)\b([a-z]{3,})'s\b", r"\1", normalized)
+    normalized = _MERGED_MARKET_TERM_RE.sub(r"\1 \2", normalized)
+    normalized = _TRAILING_PLURAL_MARKET_RE.sub(r"\1 \2", normalized)
+    return " ".join(normalized.split())
+
+
+def _looks_like_market_time_series(question: str) -> bool:
+    """Catch messy time-series market questions like 'appleshigh over 90 days'."""
+    metric_terms = {
+        "price",
+        "high",
+        "low",
+        "open",
+        "close",
+        "return",
+        "returns",
+        "volatility",
+        "sharpe",
+        "ratio",
+        "history",
+        "historical",
+        "drawdown",
+        "quote",
+    }
+    return _TIME_WINDOW_RE.search(question) is not None and any(
+        _contains_keyword(question, term) for term in metric_terms
+    )
+
+
 def _keyword_override(question: str) -> str | None:
     """Deterministically route obvious questions before calling Titan."""
-    q = question.lower()
+    q = _normalize_question_text(question).lower()
     market_hits = sum(_contains_keyword(q, keyword) for keyword in _MARKET_OVERRIDE_KW)
     housing_hits = sum(_contains_keyword(q, keyword) for keyword in _HOUSING_OVERRIDE_KW)
 
@@ -140,6 +224,8 @@ def _keyword_override(question: str) -> str | None:
         return "market"
     if housing_hits and not market_hits:
         return "housing"
+    if not housing_hits and _looks_like_market_time_series(q):
+        return "market"
     return None
 
 
@@ -149,14 +235,20 @@ def classify_question(question: str) -> str:
     Returns:
         'housing', 'market', or 'out_of_scope' (lowercase).
     """
-    override = _keyword_override(question)
+    normalized_question = _normalize_question_text(question)
+    override = _keyword_override(normalized_question)
     if override is not None:
-        logger.debug("Router | keyword override={!r} | question={!r}", override, question)
+        logger.debug(
+            "Router | keyword override={!r} | question={!r} | normalized={!r}",
+            override,
+            question,
+            normalized_question,
+        )
         return override
 
     try:
         response = invoke_claude(
-            prompt=question,
+            prompt=normalized_question,
             system=_CLASSIFY_SYSTEM,
             model_id=TITAN_TEXT_LITE,
             max_tokens=8,
@@ -171,10 +263,10 @@ def classify_question(question: str) -> str:
             return "out_of_scope"
         # Fallback heuristic if Titan gives an unexpected answer
         logger.warning("Titan classifier returned unexpected label: {!r}, using heuristic", label)
-        return _keyword_fallback(question)
+        return _keyword_fallback(normalized_question)
     except Exception as exc:
         logger.warning("Titan classifier failed ({}), using keyword fallback", exc)
-        return _keyword_fallback(question)
+        return _keyword_fallback(normalized_question)
 
 
 def _keyword_fallback(question: str) -> str:
@@ -234,9 +326,22 @@ def _keyword_fallback(question: str) -> str:
         "dow",
         "portfolio",
         "dividend",
+        "dividends",
         "market cap",
         "ipo",
         "trading",
+        "price history",
+        "historical price",
+        "historical prices",
+        "ohlcv",
+        "return",
+        "returns",
+        "volatility",
+        "sharpe",
+        "drawdown",
+        "max drawdown",
+        "risk-adjusted",
+        "risk adjusted",
         "unemployment",
         "inflation",
         "cpi",
@@ -256,14 +361,23 @@ def route_question(question: str) -> tuple[str | None, AgentResult]:
     Returns:
         Tuple of (agent_type, AgentResult).
     """
+    normalized_question = _normalize_question_text(question)
+    effective_question = (
+        question
+        if normalized_question == question.strip()
+        else (
+            f"{question}\n\n"
+            f"Interpret obvious misspellings or merged words as: {normalized_question}"
+        )
+    )
     agent_type = classify_question(question)
     logger.info("Router | classified={!r} | question={!r}", agent_type, question)
 
     if agent_type == "market":
-        result = _market_agent.run(question)
+        result = _market_agent.run(effective_question)
         return agent_type, result
     if agent_type == "housing":
-        result = _housing_agent.run(question)
+        result = _housing_agent.run(effective_question)
         return agent_type, result
 
     return None, AgentResult(answer=_OUT_OF_SCOPE_ANSWER)

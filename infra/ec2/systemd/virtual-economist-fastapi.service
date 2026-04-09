@@ -1,0 +1,17 @@
+[Unit]
+Description=Virtual Economist FastAPI agent backend
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/opt/virtual-economist
+EnvironmentFile=/etc/virtual-economist/fastapi.env
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:/home/ec2-user/.local/bin
+ExecStart=/usr/bin/env bash -lc 'uv --project backend run uvicorn backend.app.main:app --host 127.0.0.1 --port 8000'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

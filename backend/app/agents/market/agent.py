@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import math
+import re
+from itertools import pairwise
 from typing import Any
 
 from backend.app.agents.base import BaseAgent
@@ -30,10 +33,24 @@ _ANALYST_SIGNAL_FIELDS = {
     "sell": "sell_count",
     "strong_sell": "strong_sell_count",
 }
+_TRADING_DAYS_PER_YEAR = 252
+_MAX_OHLCV_ROWS = 2520
+
+
+def _normalize_db_column_name(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", name.strip().lower()).strip("_")
+
+
+def _quote_ident(name: str) -> str:
+    return '"' + name.replace('"', '""') + '"'
 
 
 class MarketAgent(BaseAgent):
     """Tool-use market agent for company, stock, and macro questions."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._ohlcv_columns_cache: dict[str, str] | None = None
 
     def _get_system_prompt(self) -> str:
         return SYSTEM_PROMPT
@@ -165,6 +182,62 @@ class MarketAgent(BaseAgent):
                     },
                 }
             },
+            {
+                "toolSpec": {
+                    "name": "get_historical_ohlcv",
+                    "description": (
+                        "Fetch historical daily OHLCV data from the local stock_ohlcv table. "
+                        "Useful for price-history, trend, high/low range, dividend, and "
+                        "volume questions."
+                    ),
+                    "inputSchema": {
+                        "json": {
+                            "type": "object",
+                            "properties": {
+                                "symbol": {"type": "string"},
+                                "lookback_days": {
+                                    "type": "integer",
+                                    "minimum": 2,
+                                    "maximum": _MAX_OHLCV_ROWS,
+                                },
+                                "start_date": {"type": "string"},
+                                "end_date": {"type": "string"},
+                            },
+                            "required": ["symbol"],
+                        }
+                    },
+                }
+            },
+            {
+                "toolSpec": {
+                    "name": "analyze_stock_performance",
+                    "description": (
+                        "Analyze historical stock performance from the stock_ohlcv table. "
+                        "Computes return, annualized volatility, Sharpe ratio, max drawdown, "
+                        "and related metrics for one or more ticker symbols."
+                    ),
+                    "inputSchema": {
+                        "json": {
+                            "type": "object",
+                            "properties": {
+                                "symbols": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "minItems": 1,
+                                    "maxItems": 5,
+                                },
+                                "lookback_days": {
+                                    "type": "integer",
+                                    "minimum": 20,
+                                    "maximum": _MAX_OHLCV_ROWS,
+                                },
+                                "risk_free_rate_pct": {"type": "number"},
+                            },
+                            "required": ["symbols"],
+                        }
+                    },
+                }
+            },
         ]
 
     def _execute_tool(self, name: str, input_data: dict[str, Any]) -> dict[str, Any]:
@@ -175,6 +248,8 @@ class MarketAgent(BaseAgent):
             "get_analyst_recommendations": self._tool_get_analyst_recommendations,
             "get_economic_indicators": self._tool_get_economic_indicators,
             "screen_companies": self._tool_screen_companies,
+            "get_historical_ohlcv": self._tool_get_historical_ohlcv,
+            "analyze_stock_performance": self._tool_analyze_stock_performance,
         }
         handler = handlers.get(name)
         if handler is None:
@@ -369,6 +444,317 @@ LIMIT %s"""
             "rows": [dict(zip(columns, row, strict=False)) for row in rows],
         }
 
+    def _tool_get_historical_ohlcv(self, input_data: dict[str, Any]) -> dict[str, Any]:
+        symbol = self._required_symbol(input_data)
+        lookback_days = self._bounded_limit(
+            input_data.get("lookback_days"),
+            default=90,
+            maximum=_MAX_OHLCV_ROWS,
+        )
+        rows_payload = self._fetch_ohlcv_rows(
+            symbol,
+            lookback_days=lookback_days,
+            start_date=self._optional_text(input_data.get("start_date")),
+            end_date=self._optional_text(input_data.get("end_date")),
+        )
+        rows = rows_payload["rows"]
+        summary = self._summarize_ohlcv_rows(rows)
+
+        return {
+            "tool": "get_historical_ohlcv",
+            "symbol": symbol,
+            "source": "stock_ohlcv",
+            "sql": rows_payload["sql"],
+            "row_count": len(rows),
+            "rows": rows[-min(len(rows), 120) :],
+            "summary": summary,
+        }
+
+    def _tool_analyze_stock_performance(self, input_data: dict[str, Any]) -> dict[str, Any]:
+        raw_symbols = input_data.get("symbols") or []
+        symbols = [str(symbol).strip().upper() for symbol in raw_symbols if str(symbol).strip()]
+        deduped_symbols = list(dict.fromkeys(symbols))[:5]
+        if not deduped_symbols:
+            raise ValueError("symbols is required")
+
+        lookback_days = self._bounded_limit(
+            input_data.get("lookback_days"),
+            default=252,
+            maximum=_MAX_OHLCV_ROWS,
+        )
+        risk_free_rate_pct = self._to_float(input_data.get("risk_free_rate_pct"), default=4.0)
+
+        metrics: list[dict[str, Any]] = []
+        for symbol in deduped_symbols:
+            payload = self._fetch_ohlcv_rows(symbol, lookback_days=lookback_days)
+            metrics.append(
+                {
+                    "symbol": symbol,
+                    "source": "stock_ohlcv",
+                    "assumption": (
+                        "Metrics are computed from local daily close series with "
+                        "dividends added and stock split factors applied when present."
+                    ),
+                    **self._compute_performance_metrics(
+                        payload["rows"],
+                        risk_free_rate_pct=risk_free_rate_pct,
+                    ),
+                }
+            )
+
+        return {
+            "tool": "analyze_stock_performance",
+            "source": "stock_ohlcv",
+            "lookback_days": lookback_days,
+            "risk_free_rate_pct": risk_free_rate_pct,
+            "metrics": metrics,
+        }
+
+    def _stock_ohlcv_columns(self) -> dict[str, str]:
+        if self._ohlcv_columns_cache is not None:
+            return self._ohlcv_columns_cache
+
+        with db_cursor() as cur:
+            cur.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public' AND table_name = 'stock_ohlcv'
+                ORDER BY ordinal_position
+                """
+            )
+            rows = cur.fetchall()
+
+        columns = {
+            _normalize_db_column_name(str(row[0])): str(row[0]) for row in rows if row and row[0]
+        }
+        self._ohlcv_columns_cache = columns
+        return columns
+
+    def _fetch_ohlcv_rows(
+        self,
+        symbol: str,
+        *,
+        lookback_days: int = 90,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> dict[str, Any]:
+        columns = self._stock_ohlcv_columns()
+        required = {"ticker", "date", "open", "high", "low", "close", "volume"}
+        missing = sorted(column for column in required if column not in columns)
+        if missing:
+            raise ValueError(f"stock_ohlcv is missing required columns: {', '.join(missing)}")
+
+        ticker_col = _quote_ident(columns["ticker"])
+        date_col = _quote_ident(columns["date"])
+        open_col = _quote_ident(columns["open"])
+        high_col = _quote_ident(columns["high"])
+        low_col = _quote_ident(columns["low"])
+        close_col = _quote_ident(columns["close"])
+        volume_col = _quote_ident(columns["volume"])
+        dividends_expr = (
+            f"{_quote_ident(columns['dividends'])} AS dividends"
+            if "dividends" in columns
+            else "0::numeric AS dividends"
+        )
+        splits_expr = (
+            f"{_quote_ident(columns['stock_splits'])} AS stock_splits"
+            if "stock_splits" in columns
+            else "1::numeric AS stock_splits"
+        )
+
+        select_list = f"""\
+{ticker_col} AS ticker,
+{date_col} AS trade_date,
+{open_col} AS open,
+{high_col} AS high,
+{low_col} AS low,
+{close_col} AS close,
+{volume_col} AS volume,
+{dividends_expr},
+{splits_expr}"""
+
+        if start_date or end_date:
+            where_clauses = [f"{ticker_col} = %s"]
+            params: list[Any] = [symbol]
+            if start_date:
+                where_clauses.append(f"{date_col} >= %s")
+                params.append(start_date)
+            if end_date:
+                where_clauses.append(f"{date_col} <= %s")
+                params.append(end_date)
+            params.append(min(lookback_days, _MAX_OHLCV_ROWS))
+            sql = f"""\
+SELECT *
+FROM (
+  SELECT
+    {select_list}
+  FROM stock_ohlcv
+  WHERE {" AND ".join(where_clauses)}
+  ORDER BY {date_col} DESC
+  LIMIT %s
+) recent
+ORDER BY trade_date ASC"""
+        else:
+            limit = min(max(lookback_days, 2), _MAX_OHLCV_ROWS)
+            sql = f"""\
+SELECT *
+FROM (
+  SELECT
+    {select_list}
+  FROM stock_ohlcv
+  WHERE {ticker_col} = %s
+  ORDER BY {date_col} DESC
+  LIMIT %s
+) recent
+ORDER BY trade_date ASC"""
+            params = [symbol, limit]
+
+        with db_cursor() as cur:
+            rows, columns_out = self._safe_execute(sql, cur, tuple(params))
+
+        return {
+            "sql": sql,
+            "rows": [dict(zip(columns_out, row, strict=False)) for row in rows],
+        }
+
+    def _summarize_ohlcv_rows(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
+        if not rows:
+            return {"found": False}
+
+        closes = [self._to_float(row.get("close")) for row in rows if row.get("close") is not None]
+        highs = [self._to_float(row.get("high")) for row in rows if row.get("high") is not None]
+        lows = [self._to_float(row.get("low")) for row in rows if row.get("low") is not None]
+        volumes = [
+            self._to_float(row.get("volume")) for row in rows if row.get("volume") is not None
+        ]
+        total_dividends = sum(self._to_float(row.get("dividends")) for row in rows)
+
+        first_close = closes[0] if closes else None
+        last_close = closes[-1] if closes else None
+        period_return_pct = None
+        if first_close is not None and first_close != 0.0 and last_close is not None:
+            period_return_pct = round(((last_close / first_close) - 1.0) * 100.0, 2)
+
+        return {
+            "found": True,
+            "start_date": rows[0].get("trade_date"),
+            "end_date": rows[-1].get("trade_date"),
+            "latest_close": round(last_close, 4) if last_close is not None else None,
+            "period_return_pct": period_return_pct,
+            "highest_high": round(max(highs), 4) if highs else None,
+            "lowest_low": round(min(lows), 4) if lows else None,
+            "average_volume": round(sum(volumes) / len(volumes), 2) if volumes else None,
+            "total_dividends": round(total_dividends, 4),
+        }
+
+    def _compute_performance_metrics(
+        self,
+        rows: list[dict[str, Any]],
+        *,
+        risk_free_rate_pct: float,
+    ) -> dict[str, Any]:
+        if len(rows) < 2:
+            return {
+                "found": bool(rows),
+                "metrics_available": False,
+                "reason": "Not enough OHLCV rows to calculate returns.",
+            }
+
+        returns: list[float] = []
+        total_dividends = 0.0
+        split_events = 0
+
+        for previous, current in pairwise(rows):
+            previous_close = self._to_float(previous.get("close"))
+            current_close = self._to_float(current.get("close"))
+            dividend = self._to_float(current.get("dividends"))
+            split_factor = self._to_float(current.get("stock_splits"), default=1.0)
+
+            if previous_close <= 0 or current_close <= 0:
+                continue
+
+            if split_factor not in (0.0, 1.0):
+                split_events += 1
+
+            total_dividends += dividend
+            adjusted_previous_close = (
+                previous_close / split_factor if split_factor not in (0.0, 1.0) else previous_close
+            )
+            if adjusted_previous_close <= 0:
+                continue
+            returns.append(((current_close + dividend) / adjusted_previous_close) - 1.0)
+
+        if not returns:
+            return {
+                "found": True,
+                "metrics_available": False,
+                "reason": "No valid close-to-close return observations were available.",
+            }
+
+        mean_daily_return = sum(returns) / len(returns)
+        variance = (
+            sum((value - mean_daily_return) ** 2 for value in returns) / (len(returns) - 1)
+            if len(returns) > 1
+            else 0.0
+        )
+        daily_volatility = math.sqrt(max(variance, 0.0))
+        rf_daily = (risk_free_rate_pct / 100.0) / _TRADING_DAYS_PER_YEAR
+        sharpe_ratio = None
+        if daily_volatility > 0:
+            sharpe_ratio = ((mean_daily_return - rf_daily) / daily_volatility) * math.sqrt(
+                _TRADING_DAYS_PER_YEAR
+            )
+
+        cumulative_growth = 1.0
+        peak = 1.0
+        max_drawdown = 0.0
+        for daily_return in returns:
+            cumulative_growth *= 1.0 + daily_return
+            peak = max(peak, cumulative_growth)
+            max_drawdown = min(max_drawdown, (cumulative_growth / peak) - 1.0)
+
+        annualized_return = None
+        if cumulative_growth > 0:
+            annualized_return = cumulative_growth ** (_TRADING_DAYS_PER_YEAR / len(returns)) - 1.0
+
+        highs = [self._to_float(row.get("high")) for row in rows if row.get("high") is not None]
+        lows = [self._to_float(row.get("low")) for row in rows if row.get("low") is not None]
+        volumes = [
+            self._to_float(row.get("volume")) for row in rows if row.get("volume") is not None
+        ]
+        latest_close = self._to_float(rows[-1].get("close"))
+
+        return {
+            "found": True,
+            "metrics_available": True,
+            "start_date": rows[0].get("trade_date"),
+            "end_date": rows[-1].get("trade_date"),
+            "observations": len(rows),
+            "return_observations": len(returns),
+            "latest_close": round(latest_close, 4),
+            "total_return_pct": round((cumulative_growth - 1.0) * 100.0, 2),
+            "annualized_return_pct": (
+                round(annualized_return * 100.0, 2) if annualized_return is not None else None
+            ),
+            "annualized_volatility_pct": round(
+                daily_volatility * math.sqrt(_TRADING_DAYS_PER_YEAR) * 100.0,
+                2,
+            ),
+            "sharpe_ratio": round(sharpe_ratio, 3) if sharpe_ratio is not None else None,
+            "max_drawdown_pct": round(max_drawdown * 100.0, 2),
+            "average_daily_return_pct": round(mean_daily_return * 100.0, 3),
+            "positive_days_pct": round(
+                (sum(value > 0 for value in returns) / len(returns)) * 100.0,
+                2,
+            ),
+            "highest_high": round(max(highs), 4) if highs else None,
+            "lowest_low": round(min(lows), 4) if lows else None,
+            "average_volume": round(sum(volumes) / len(volumes), 2) if volumes else None,
+            "total_dividends": round(total_dividends, 4),
+            "stock_split_events": split_events,
+        }
+
     def _required_symbol(self, input_data: dict[str, Any]) -> str:
         symbol = str(input_data.get("symbol", "")).strip().upper()
         if not symbol:
@@ -396,3 +782,11 @@ LIMIT %s"""
         if numeric > 1:
             numeric /= 100.0
         return max(0.0, numeric)
+
+    def _to_float(self, value: Any, *, default: float = 0.0) -> float:
+        if value in (None, ""):
+            return default
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default

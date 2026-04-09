@@ -6,9 +6,22 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+const corsOrigins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
 
-app.use(cors());
+app.use(
+  cors({
+    origin: corsOrigins.length > 0 ? corsOrigins : true,
+    credentials: true,
+  }),
+);
 app.use(express.json());
+
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
 
 app.use("/api", authRoutes);
 

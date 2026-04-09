@@ -1,0 +1,17 @@
+[Unit]
+Description=Virtual Economist Express auth backend
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/opt/virtual-economist/backend
+EnvironmentFile=/etc/virtual-economist/auth.env
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

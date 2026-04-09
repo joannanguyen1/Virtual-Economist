@@ -5,12 +5,12 @@ import ChatInterface, {
   ChatReply,
 } from "../components/ChatInterface";
 import Navbar from "../components/Navbar";
-import { getAuthToken, getStoredUser } from "../lib/auth";
+import { getAgentApiBase } from "../lib/api";
+import { clearAuthSession, getAuthToken, getStoredUser } from "../lib/auth";
 
 type AssistantMode = "auto" | "housing" | "market";
 
-const API_BASE_URL =
-  process.env.REACT_APP_AGENT_API_URL || "http://localhost:8000";
+const API_BASE_URL = getAgentApiBase();
 
 const isAssistantMode = (value: string | null): value is AssistantMode =>
   value === "auto" || value === "housing" || value === "market";
@@ -87,7 +87,7 @@ const endpointByMode: Record<AssistantMode, string> = {
 };
 
 interface ChatSummary {
-  id: number;
+  id: number | string;
   agent_type?: string | null;
   title?: string | null;
   created_at: string;
@@ -107,6 +107,14 @@ interface ChatHistoryResponse {
   messages: HistoryMessage[];
 }
 
+interface LocalChatRecord {
+  id: number | string;
+  agent_type?: string | null;
+  title?: string | null;
+  created_at: string;
+  messages: HistoryMessage[];
+}
+
 const toAgentType = (
   value: string | null | undefined,
 ): "housing" | "market" | null => {
@@ -116,14 +124,37 @@ const toAgentType = (
   return null;
 };
 
+const localHistoryKey = (userId: number | undefined) =>
+  `virtual_economist_local_history:${userId ?? "guest"}`;
+
+const readLocalHistory = (userId: number | undefined): LocalChatRecord[] => {
+  const raw = localStorage.getItem(localHistoryKey(userId));
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as LocalChatRecord[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    localStorage.removeItem(localHistoryKey(userId));
+    return [];
+  }
+};
+
+const writeLocalHistory = (userId: number | undefined, chats: LocalChatRecord[]) => {
+  localStorage.setItem(localHistoryKey(userId), JSON.stringify(chats));
+};
+
 const AssistantWorkspace: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const modeParam = searchParams.get("mode");
   const activeMode: AssistantMode = isAssistantMode(modeParam)
     ? modeParam
     : "auto";
+  const [conversationViewKey, setConversationViewKey] = useState(0);
   const [chatSummaries, setChatSummaries] = useState<ChatSummary[]>([]);
-  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<number | string | null>(null);
   const [seedMessages, setSeedMessages] = useState<ChatMessage[]>([]);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
@@ -170,7 +201,14 @@ const AssistantWorkspace: React.FC = () => {
 
   const loadChatSummaries: () => Promise<void> = useCallback(async () => {
     if (!authState.token) {
-      setChatSummaries([]);
+      setChatSummaries(
+        readLocalHistory(authState.user?.id).map(({ id, agent_type, title, created_at }) => ({
+          id,
+          agent_type,
+          title,
+          created_at,
+        })),
+      );
       return;
     }
 
@@ -185,19 +223,36 @@ const AssistantWorkspace: React.FC = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          clearAuthSession();
+          throw new Error("Your session expired. Log in again to load saved chats.");
+        }
         throw new Error("Unable to load saved chats.");
       }
 
       const data = (await response.json()) as ChatSummary[];
       setChatSummaries(data);
     } catch (error) {
+      const localChats = readLocalHistory(authState.user?.id).map(
+        ({ id, agent_type, title, created_at }) => ({
+          id,
+          agent_type,
+          title,
+          created_at,
+        }),
+      );
+      setChatSummaries(localChats);
       setHistoryError(
-        error instanceof Error ? error.message : "Unable to load saved chats.",
+        localChats.length > 0
+          ? "Database unavailable. Showing chats saved in this browser."
+          : error instanceof Error
+            ? error.message
+            : "Unable to load saved chats.",
       );
     } finally {
       setIsChatListLoading(false);
     }
-  }, [authState.token]);
+  }, [authState.token, authState.user?.id]);
 
   useEffect(() => {
     if (!authState.token) {
@@ -212,6 +267,25 @@ const AssistantWorkspace: React.FC = () => {
   }, [authState.token, loadChatSummaries]);
 
   const loadConversation = async (chat: ChatSummary) => {
+    setConversationViewKey((previous) => previous + 1);
+
+    if (typeof chat.id === "string") {
+      const localChat = readLocalHistory(authState.user?.id).find(
+        (entry) => entry.id === chat.id,
+      );
+      setSelectedChatId(chat.id);
+      setSeedMessages(
+        (localChat?.messages || []).map((message) => ({
+          id: `history-${message.id}`,
+          sender: message.sender === "user" ? "user" : "assistant",
+          text: message.message,
+          agentType:
+            message.sender === "agent" ? toAgentType(localChat?.agent_type) : undefined,
+        })),
+      );
+      return;
+    }
+
     if (!authState.token) {
       return;
     }
@@ -231,6 +305,12 @@ const AssistantWorkspace: React.FC = () => {
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          clearAuthSession();
+          throw new Error(
+            "Your session expired. Log in again to reopen saved conversations.",
+          );
+        }
         throw new Error("Unable to load that conversation.");
       }
 
@@ -245,11 +325,30 @@ const AssistantWorkspace: React.FC = () => {
         })),
       );
     } catch (error) {
-      setSeedMessages([]);
+      const localChat = readLocalHistory(authState.user?.id).find(
+        (entry) => entry.id === chat.id,
+      );
+      if (localChat) {
+        setSeedMessages(
+          localChat.messages.map((message) => ({
+            id: `history-${message.id}`,
+            sender: message.sender === "user" ? "user" : "assistant",
+            text: message.message,
+            agentType:
+              message.sender === "agent"
+                ? toAgentType(localChat.agent_type)
+                : undefined,
+          })),
+        );
+      } else {
+        setSeedMessages([]);
+      }
       setHistoryError(
-        error instanceof Error
-          ? error.message
-          : "Unable to load that conversation.",
+        localChat
+          ? "Database unavailable. Loaded the browser-saved copy of this chat."
+          : error instanceof Error
+            ? error.message
+            : "Unable to load that conversation.",
       );
     } finally {
       setIsHistoryLoading(false);
@@ -260,7 +359,7 @@ const AssistantWorkspace: React.FC = () => {
     message: string,
     conversationId: number | string | null,
   ): Promise<ChatReply> => {
-    const requestBody = conversationId
+    const requestBody = typeof conversationId === "number"
       ? { question: message, conversation_id: conversationId }
       : { question: message };
 
@@ -287,6 +386,10 @@ const AssistantWorkspace: React.FC = () => {
     }
 
     if (!response.ok) {
+      if (response.status === 401) {
+        clearAuthSession();
+        throw new Error("Your session expired. Log in again to save chats.");
+      }
       const detail =
         (payload?.error as string | undefined) ||
         (payload?.detail as string | undefined) ||
@@ -323,12 +426,71 @@ const AssistantWorkspace: React.FC = () => {
     };
   };
 
+  const persistLocalTurn = (
+    question: string,
+    reply: ChatReply,
+    conversationId: number | string | null,
+  ) => {
+    const userId = authState.user?.id;
+    const chats = readLocalHistory(userId);
+    const chatId =
+      reply.conversation_id ??
+      conversationId ??
+      `local-${Date.now()}`;
+    const existing = chats.find((chat) => chat.id === chatId);
+    const createdAt = existing?.created_at || new Date().toISOString();
+    const answerText =
+      reply.answer?.trim() ||
+      reply.error?.trim() ||
+      "I couldn't generate a reliable answer.";
+
+    const nextMessages = [
+      ...(existing?.messages || []),
+      {
+        id: Date.now(),
+        sender: "user" as const,
+        message: question,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: Date.now() + 1,
+        sender: "agent" as const,
+        message: answerText,
+        created_at: new Date().toISOString(),
+      },
+    ];
+
+    const nextRecord: LocalChatRecord = {
+      id: chatId,
+      agent_type:
+        Object.prototype.hasOwnProperty.call(reply, "agent_type")
+          ? (reply.agent_type ?? null)
+          : (existing?.agent_type ?? null),
+      title: existing?.title || `${question.slice(0, 60)}${question.length > 60 ? "…" : ""}`,
+      created_at: createdAt,
+      messages: nextMessages,
+    };
+
+    const nextChats = [
+      nextRecord,
+      ...chats.filter((chat) => chat.id !== chatId),
+    ].slice(0, 20);
+
+    writeLocalHistory(userId, nextChats);
+    setChatSummaries(
+      nextChats.map(({ id, agent_type, title, created_at }) => ({
+        id,
+        agent_type,
+        title,
+        created_at,
+      })),
+    );
+
+    return chatId;
+  };
+
   const handleReply = (reply: ChatReply) => {
-    if (
-      authState.token &&
-      typeof reply.conversation_id === "number" &&
-      selectedChatId !== reply.conversation_id
-    ) {
+    if (reply.conversation_id != null && selectedChatId !== reply.conversation_id) {
       setSelectedChatId(reply.conversation_id);
     }
 
@@ -337,7 +499,20 @@ const AssistantWorkspace: React.FC = () => {
     }
   };
 
+  const handleSendWithPersistence = async (
+    message: string,
+    conversationId: number | string | null,
+  ): Promise<ChatReply> => {
+    const reply = await handleSendMessage(message, conversationId);
+    const persistedConversationId = persistLocalTurn(message, reply, conversationId);
+    return {
+      ...reply,
+      conversation_id: reply.conversation_id ?? persistedConversationId,
+    };
+  };
+
   const handleResetConversation = () => {
+    setConversationViewKey((previous) => previous + 1);
     setSelectedChatId(null);
     setSeedMessages([]);
     setHistoryError(null);
@@ -440,7 +615,7 @@ const AssistantWorkspace: React.FC = () => {
               subtitle={modeContent[activeMode].subtitle}
               welcomeText={modeContent[activeMode].welcomeText}
               inputPlaceholder={modeContent[activeMode].inputPlaceholder}
-              sessionKey={`${activeMode}:${selectedChatId ?? "new"}`}
+              sessionKey={`${activeMode}:${conversationViewKey}`}
               examplePrompts={promptSets[activeMode]}
               modeOptions={modeOptions}
               activeMode={activeMode}
@@ -449,7 +624,7 @@ const AssistantWorkspace: React.FC = () => {
               onModeChange={handleModeChange}
               onResetConversation={handleResetConversation}
               onReply={handleReply}
-              onSendMessage={handleSendMessage}
+              onSendMessage={handleSendWithPersistence}
             />
           </div>
         </div>
