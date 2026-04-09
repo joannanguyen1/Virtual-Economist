@@ -83,8 +83,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   >(initialConversationId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const previousSessionKeyRef = useRef(sessionKey);
 
   useEffect(() => {
+    if (
+      previousSessionKeyRef.current === sessionKey &&
+      (!initialMessages || initialMessages.length === 0)
+    ) {
+      return;
+    }
+
+    previousSessionKeyRef.current = sessionKey;
     setMessages(
       initialMessages?.length ? initialMessages : [createWelcomeMessage(welcomeText)],
     );
@@ -231,7 +240,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               key={prompt}
               type="button"
               className="prompt-card"
-              onClick={() => setInputValue(prompt)}
+              onClick={() => void submitMessage(prompt)}
+              disabled={isLoading}
             >
               {prompt}
             </button>

@@ -66,6 +66,40 @@ _CORPORATE_SUFFIX_RE = re.compile(
     re.IGNORECASE,
 )
 _NON_ALNUM_RE = re.compile(r"[^A-Za-z0-9]+")
+_MARKET_CONTEXT_TERMS = (
+    "stock",
+    "stocks",
+    "price",
+    "prices",
+    "quote",
+    "quotes",
+    "high",
+    "low",
+    "open",
+    "close",
+    "return",
+    "returns",
+    "volatility",
+    "sharpe",
+    "ratio",
+    "history",
+    "historical",
+    "trend",
+    "trends",
+    "drawdown",
+    "ohlcv",
+)
+_MARKET_CONTEXT_PATTERN = "|".join(
+    sorted((re.escape(term) for term in _MARKET_CONTEXT_TERMS), key=len, reverse=True)
+)
+_MERGED_MARKET_TERM_RE = re.compile(
+    rf"\b([A-Za-z]{{3,}}?)({_MARKET_CONTEXT_PATTERN})\b",
+    re.IGNORECASE,
+)
+_TRAILING_MARKET_TERM_RE = re.compile(
+    rf"\b([A-Za-z]{{3,}}?)(?:s)? ((?:{_MARKET_CONTEXT_PATTERN})(?: .*)?)\b",
+    re.IGNORECASE,
+)
 
 
 def _normalize_company_name(value: str) -> str:
@@ -78,6 +112,21 @@ def _strip_corporate_suffixes(value: str) -> str:
     """Remove common legal suffixes so API search works on simple company names."""
     stripped = _CORPORATE_SUFFIX_RE.sub(" ", value)
     return " ".join(stripped.split()).strip(" .,-")
+
+
+def _split_embedded_market_terms(value: str) -> str:
+    """Insert spaces into merged phrases like 'appleshigh' -> 'apples high'."""
+    return _MERGED_MARKET_TERM_RE.sub(r"\1 \2", value)
+
+
+def _strip_market_context_terms(value: str) -> str:
+    """Reduce company strings that accidentally include finance terms."""
+    split_value = _split_embedded_market_terms(value.strip())
+    stripped = _TRAILING_MARKET_TERM_RE.sub(r"\1", split_value)
+    words = stripped.split()
+    if words and len(words[-1]) > 4 and words[-1].endswith("s"):
+        words[-1] = words[-1][:-1]
+    return " ".join(words).strip(" .,-")
 
 
 def _company_search_candidates(company: str) -> list[str]:
@@ -98,8 +147,12 @@ def _company_search_candidates(company: str) -> list[str]:
 
     add(raw)
     add(raw.replace(".", ""))
+    add(_split_embedded_market_terms(raw.replace(".", "")))
 
-    simplified = _strip_corporate_suffixes(raw.replace(".", ""))
+    finance_trimmed = _strip_market_context_terms(raw.replace(".", ""))
+    add(finance_trimmed)
+
+    simplified = _strip_corporate_suffixes(finance_trimmed or raw.replace(".", ""))
     add(simplified)
 
     parts = simplified.split()
@@ -428,7 +481,10 @@ def _parse_city_state(city: str) -> tuple[str, str]:
     parts = [p.strip() for p in city.split(",")]
     if len(parts) < 2:
         city_name = normalize_city_alias(city.strip())
-        return city_name, _infer_state_fips_from_housing_db(city_name)
+        state_fips = _infer_state_fips_from_housing_db(city_name)
+        if not state_fips:
+            state_fips = _infer_state_fips_from_weather_geocode(city_name)
+        return city_name, state_fips
     city_name = normalize_city_alias(parts[0])
     state_raw = parts[1].strip()
     fips = _STATE_FIPS.get(state_raw) or _STATE_ABBR_TO_FIPS.get(state_raw.upper(), "")
@@ -467,6 +523,22 @@ def _infer_state_fips_from_housing_db(city_name: str) -> str:
             unique_states,
         )
     return ""
+
+
+@lru_cache(maxsize=256)
+def _infer_state_fips_from_weather_geocode(city_name: str) -> str:
+    """Use Open-Meteo geocoding as a fallback when DB-based city-state inference fails."""
+    try:
+        location = _open_meteo_geocode_city_result(city_name, "")
+    except Exception:
+        logger.warning("Weather geocode state inference failed for city={!r}", city_name)
+        return ""
+
+    if not location:
+        return ""
+
+    state_name = str(location.get("admin1", "")).strip()
+    return _STATE_FIPS.get(state_name) or _STATE_ABBR_TO_FIPS.get(state_name.upper(), "")
 
 
 def _census_rows(state_fips: str, key: str = "") -> list[list[str]]:
@@ -674,11 +746,8 @@ def _score_weather_geocode_result(city_name: str, state_name: str, result: dict)
 
 
 @_http_retry
-def open_meteo_geocode_city(city: str) -> dict | None:
+def _open_meteo_geocode_city_result(query_city: str, state_name: str) -> dict | None:
     """Resolve a U.S. city string to one Open-Meteo geocoding result."""
-    query_city, state_fips = _parse_city_state(city)
-    state_name = _STATE_FIPS_TO_NAME.get(state_fips, "")
-
     resp = _http_client().get(
         "https://geocoding-api.open-meteo.com/v1/search",
         params={
@@ -701,6 +770,14 @@ def open_meteo_geocode_city(city: str) -> dict | None:
         reverse=True,
     )
     return ranked[0] if ranked else None
+
+
+@_http_retry
+def open_meteo_geocode_city(city: str) -> dict | None:
+    """Resolve a U.S. city string to one Open-Meteo geocoding result."""
+    query_city, state_fips = _parse_city_state(city)
+    state_name = _STATE_FIPS_TO_NAME.get(state_fips, "")
+    return _open_meteo_geocode_city_result(query_city, state_name)
 
 
 @_http_retry

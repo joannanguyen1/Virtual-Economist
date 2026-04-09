@@ -74,3 +74,8 @@ uv venv .venv --python 3.11
 source .venv/bin/activate
 uv sync --group dev --group test
 uv run pre-commit install
+
+8. Deployment and Demo
+
+- EC2 deployment guide: `infra/ec2/README.md`
+- Demo checklist and backup prompts: `infra/demo-runbook.md`

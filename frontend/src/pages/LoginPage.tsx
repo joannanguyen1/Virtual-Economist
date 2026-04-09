@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { getAuthApiBase } from "../lib/api";
 import { setAuthSession } from "../lib/auth";
 import "../styles/auth.css";
 
@@ -12,7 +13,7 @@ const LoginPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
-  const AUTH_API = process.env.REACT_APP_API_URL || "http://localhost:800";
+  const AUTH_API = getAuthApiBase();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

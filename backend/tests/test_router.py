@@ -94,6 +94,32 @@ def test_market_screening_questions_use_keyword_override(
     )
 
 
+def test_quant_market_questions_use_keyword_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        router,
+        "invoke_claude",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("Titan should not be called for obvious quant market questions")
+        ),
+    )
+
+    assert router.classify_question("What is Apple's Sharpe ratio over the last year?") == "market"
+
+
+def test_merged_typo_market_questions_route_to_market(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        router,
+        "invoke_claude",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("Titan should not be called for obvious typo-tolerant market questions")
+        ),
+    )
+
+    assert router.classify_question("what is appleshigh over the last 90 days") == "market"
+
+
 def test_route_question_returns_scope_message_for_unrelated_query(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

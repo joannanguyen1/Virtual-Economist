@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { getAuthApiBase } from "../lib/api";
 import "../styles/auth.css";
 
 const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
   const [message, setMessage] = useState("Verifying your email...");
   const [error, setError] = useState("");
-  const AUTH_API = process.env.REACT_APP_API_URL || "http://localhost:800";
+  const AUTH_API = getAuthApiBase();
 
   useEffect(() => {
     const token = searchParams.get("token");
