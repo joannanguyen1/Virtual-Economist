@@ -10,6 +10,7 @@ import MarketAgent from "./pages/MarketAgent";
 import AssistantWorkspace from "./pages/AssistantWorkspace";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import Features from "./pages/Features";
+import Profile from "./pages/Profile";
 
 const App: React.FC = () => {
   return (
@@ -25,6 +26,7 @@ const App: React.FC = () => {
         <Route path="/features" element={<Features />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/assistant" replace />} />
       </Routes>
     </BrowserRouter>

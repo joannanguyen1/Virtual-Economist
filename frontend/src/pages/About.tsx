@@ -1,5 +1,8 @@
 import React from "react";
+import Navbar from "../components/Navbar";
 import "../styles/about.css";
+
+
 
 const About: React.FC = () => {
   return (

@@ -1,0 +1,138 @@
+.profile-page {
+  min-height: 100vh;
+  padding: 7rem 1.5rem 2.5rem;
+  background: linear-gradient(135deg, #0f172a, #020617);
+  color: white;
+}
+
+.profile-hero {
+  max-width: 760px;
+  margin: 0 auto 2rem;
+  text-align: center;
+}
+
+.profile-eyebrow {
+  margin-bottom: 0.75rem;
+  color: #2fb6a3;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profile-hero h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.05;
+}
+
+.profile-hero p:last-child {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.profile-grid {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.profile-card {
+  padding: 1.5rem;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 180, 194, 0.14);
+  background: linear-gradient(
+    180deg,
+    rgba(21, 32, 43, 0.92),
+    rgba(10, 18, 28, 0.88)
+  );
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.34);
+}
+
+.profile-card-label {
+  margin: 0 0 0.9rem;
+  color: #2fb6a3;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profile-card h2 {
+  margin: 0 0 1rem;
+  color: #f8fafc;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.profile-card-copy {
+  margin: 0 0 1rem;
+  color: #94a3b8;
+  line-height: 1.65;
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profile-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(148, 180, 194, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.profile-detail-row span:first-child {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.profile-detail-row span:last-child {
+  color: #f8fafc;
+  font-weight: 600;
+  text-align: right;
+}
+
+.profile-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.profile-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.4rem;
+  padding: 0 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(47, 182, 163, 0.24);
+  background: rgba(47, 182, 163, 0.12);
+  color: #d7fffa;
+  font-weight: 600;
+}
+
+.profile-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #cbd5e1;
+  line-height: 1.8;
+}
+
+.profile-list li + li {
+  margin-top: 0.35rem;
+}
+
+@media (max-width: 860px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}

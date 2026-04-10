@@ -1,5 +1,7 @@
 import React from "react";
+import Navbar from "../components/Navbar";
 import "../styles/features.css";
+
 
 const Features: React.FC = () => {
   return (

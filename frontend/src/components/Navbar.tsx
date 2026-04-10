@@ -42,6 +42,9 @@ const Navbar: React.FC = () => {
             <NavLink to="/about" className="navbar-link">
               About
             </NavLink>
+            <NavLink to="/profile" className="navbar-link">
+              Profile
+            </NavLink>
             <NavLink to="/assistant" className="navbar-link navbar-link-primary">
               Assistant
             </NavLink>
@@ -81,6 +84,10 @@ const Navbar: React.FC = () => {
             <NavLink to="/features" className="navbar-link">
               Features
             </NavLink>
+                      <NavLink to="/profile" className="navbar-link">
+            Profile
+          </NavLink>
+
             <NavLink to="/about" className="navbar-link">
               About
             </NavLink>
