@@ -9,26 +9,17 @@ dotenv.config();
 
 const { Pool } = pkg;
 
+const DEFAULT_DB_SECRET_ID = "ards-password";
+
 let cachedPassword = null;
 
 async function resolveDbPassword() {
-  const directPassword = process.env.DB_PASSWORD;
-  if (directPassword && directPassword !== "ADD_YOUR_GENERATED_SECRET") {
-    return directPassword;
-  }
-
   if (cachedPassword) {
     return cachedPassword;
   }
 
-  const secretArn = process.env.DB_SECRET_ARN;
+  const secretArn = process.env.DB_SECRET_ARN || DEFAULT_DB_SECRET_ID;
   const region = process.env.AWS_REGION || "us-east-1";
-
-  if (!secretArn) {
-    throw new Error(
-      "DB_SECRET_ARN is required when DB_PASSWORD is not configured.",
-    );
-  }
 
   const client = new SecretsManagerClient({ region });
   const response = await client.send(
