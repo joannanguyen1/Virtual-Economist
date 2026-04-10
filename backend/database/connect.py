@@ -22,6 +22,7 @@ DEFAULT_SSLMODE: Final[str] = "verify-full"
 DEFAULT_SSLROOTCERT: Final[str] = "certs/global-bundle.pem"
 DEFAULT_PORT: Final[int] = 5432
 DEFAULT_REGION: Final[str] = "us-east-1"
+DEFAULT_DB_SECRET_ID: Final[str] = "ards-password"
 
 
 @dataclass(frozen=True)
@@ -60,7 +61,7 @@ def load_db_config() -> DBConfig:
         port=int(port_str),
         dbname=_env("DB_NAME"),
         user=_env("DB_USER"),
-        secret_arn=_env("DB_SECRET_ARN"),
+        secret_arn=_env("DB_SECRET_ARN", DEFAULT_DB_SECRET_ID),
         region=_env("AWS_REGION", DEFAULT_REGION),
         sslmode=_env("DB_SSLMODE", DEFAULT_SSLMODE),
         sslrootcert=_env("DB_SSLROOTCERT", DEFAULT_SSLROOTCERT),
@@ -70,16 +71,9 @@ def load_db_config() -> DBConfig:
 @lru_cache(maxsize=1)
 def _get_db_password(secret_arn: str, region: str) -> str:
     """
-    Resolve the DB password.
-
-    Prefer DB_PASSWORD from the local environment so development works without
-    AWS credentials. Fall back to Secrets Manager when DB_PASSWORD is absent.
+    Resolve the DB password from Secrets Manager.
     Cache lasts for process lifetime; restart process to refresh.
     """
-    direct_password = os.getenv("DB_PASSWORD")
-    if direct_password and direct_password != "ADD_YOUR_GENERATED_SECRET":
-        return direct_password
-
     sm = boto3.client("secretsmanager", region_name=region)
     secret_str = sm.get_secret_value(SecretId=secret_arn)["SecretString"]
     secret = json.loads(secret_str)
