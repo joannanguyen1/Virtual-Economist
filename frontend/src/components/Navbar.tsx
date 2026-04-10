@@ -47,7 +47,9 @@ const Navbar: React.FC = () => {
             </NavLink>
             {user ? (
               <>
-                <span className="navbar-user-pill">{user.username}</span>
+                <NavLink to="/profile" className="navbar-user-pill navbar-user-pill--link">
+                  {user.username}
+                </NavLink>
                 <button
                   type="button"
                   className="navbar-link navbar-logout-button"
@@ -86,7 +88,9 @@ const Navbar: React.FC = () => {
             </NavLink>
             {user ? (
               <>
-                <span className="navbar-user-pill">{user.username}</span>
+                <NavLink to="/profile" className="navbar-user-pill navbar-user-pill--link">
+                  {user.username}
+                </NavLink>
                 <button
                   type="button"
                   className="navbar-link navbar-logout-button"

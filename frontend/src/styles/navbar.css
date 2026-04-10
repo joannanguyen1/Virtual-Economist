@@ -66,6 +66,23 @@
   font-weight: 700;
 }
 
+.navbar-user-pill--link {
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+  cursor: pointer;
+}
+
+.navbar-user-pill--link:hover,
+.navbar-user-pill--link.active {
+  background: rgba(47, 182, 163, 0.1);
+  border-color: rgba(47, 182, 163, 0.3);
+  box-shadow: 0 0 14px -4px rgba(47, 182, 163, 0.3);
+}
+
 .navbar-logout-button {
   cursor: pointer;
   background: transparent;

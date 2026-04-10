@@ -1,0 +1,287 @@
+/* ── Profile Page ──────────────────────────────────────────── */
+
+.profile-page {
+  min-height: 100vh;
+  padding: 110px 2rem 5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(130px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.45;
+}
+.profile-orb--teal {
+  width: 600px;
+  height: 600px;
+  top: -160px;
+  left: -120px;
+  background: radial-gradient(circle, rgba(47, 182, 163, 0.22), transparent 70%);
+  animation: profile-orb-drift 15s ease-in-out infinite alternate;
+}
+.profile-orb--warm {
+  width: 480px;
+  height: 480px;
+  bottom: -80px;
+  right: -100px;
+  background: radial-gradient(circle, rgba(244, 179, 95, 0.16), transparent 70%);
+  animation: profile-orb-drift 19s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes profile-orb-drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(28px, 36px) scale(1.07); }
+}
+
+/* ── Layout ───────────────────────────────────────────────── */
+
+.profile-layout {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  animation: profile-fade-up 0.5s ease both;
+}
+
+@keyframes profile-fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Hero ─────────────────────────────────────────────────── */
+
+.profile-hero {
+  background: rgba(9, 22, 34, 0.72);
+  border: 1px solid var(--border-color);
+  border-radius: 1.5rem;
+  padding: 2rem 2.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  backdrop-filter: blur(18px);
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(47, 182, 163, 0.5), transparent);
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(47, 182, 163, 0.25), rgba(244, 179, 95, 0.2));
+  border: 1px solid rgba(47, 182, 163, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  flex-shrink: 0;
+  box-shadow: 0 0 28px -6px rgba(47, 182, 163, 0.3);
+}
+
+.profile-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.profile-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--accent-color);
+}
+
+.profile-name {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  background: linear-gradient(110deg, #f3f1ea 40%, #2fb6a3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.profile-email {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--muted-text);
+  margin: 0;
+}
+
+/* ── Info grid ────────────────────────────────────────────── */
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.profile-card {
+  background: rgba(9, 22, 34, 0.72);
+  border: 1px solid var(--border-color);
+  border-radius: 1.25rem;
+  padding: 1.25rem 1.4rem;
+  backdrop-filter: blur(18px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-card:hover {
+  border-color: rgba(47, 182, 163, 0.3);
+  box-shadow: 0 0 24px -8px rgba(47, 182, 163, 0.15);
+}
+
+.profile-card-label {
+  font-family: var(--font-body);
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent-color);
+}
+
+.profile-card-value {
+  font-family: var(--font-body);
+  font-size: 0.97rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.profile-card-mono {
+  font-family: "Courier New", monospace;
+  color: var(--muted-strong);
+  font-size: 0.9rem;
+}
+
+.profile-card-copyable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.profile-copy-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--muted-text);
+  display: flex;
+  align-items: center;
+  transition: color 0.18s ease;
+  flex-shrink: 0;
+}
+
+.profile-copy-btn:hover {
+  color: var(--accent-color);
+}
+
+.profile-copy-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.profile-plan-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  background: linear-gradient(110deg, rgba(47, 182, 163, 0.15), rgba(244, 179, 95, 0.12));
+  border: 1px solid rgba(47, 182, 163, 0.25);
+  color: var(--accent-color);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+}
+
+/* ── Actions ──────────────────────────────────────────────── */
+
+.profile-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.profile-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.profile-action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.profile-action-btn:hover {
+  transform: translateY(-2px);
+}
+
+.profile-action-btn--primary {
+  background: linear-gradient(135deg, rgba(47, 182, 163, 0.22), rgba(47, 182, 163, 0.12));
+  border-color: rgba(47, 182, 163, 0.35);
+  color: var(--accent-color);
+}
+
+.profile-action-btn--primary:hover {
+  background: linear-gradient(135deg, rgba(47, 182, 163, 0.3), rgba(47, 182, 163, 0.18));
+  box-shadow: 0 0 24px -6px rgba(47, 182, 163, 0.35);
+}
+
+.profile-action-btn--ghost {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--border-color);
+  color: var(--muted-text);
+}
+
+.profile-action-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border-color: rgba(148, 180, 194, 0.25);
+}
+
+.profile-action-btn--danger {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.profile-action-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  box-shadow: 0 0 20px -6px rgba(239, 68, 68, 0.25);
+}
