@@ -23,6 +23,7 @@ class AgentResult:
     rows_found: int = 0
     error: str | None = None
     tool_trace: list[dict[str, Any]] | None = None
+    chart_data: dict[str, Any] | None = None
 
 
 class BaseAgent(ABC):
@@ -36,6 +37,7 @@ class BaseAgent(ABC):
         tool_trace: list[dict[str, Any]] = []
         sql_statements: list[str] = []
         total_rows = 0
+        chart_data: dict[str, Any] | None = None
 
         try:
             for _ in range(self._max_rounds()):
@@ -72,6 +74,9 @@ class BaseAgent(ABC):
                             if sql:
                                 sql_statements.append(sql)
                             total_rows += self._extract_row_count(output)
+                            extracted_chart = self._extract_chart_data(output)
+                            if extracted_chart is not None:
+                                chart_data = extracted_chart
 
                             tool_trace.append(
                                 {
@@ -125,6 +130,7 @@ class BaseAgent(ABC):
                         sql_used="\n\n".join(sql_statements) or None,
                         rows_found=total_rows,
                         tool_trace=tool_trace or None,
+                        chart_data=chart_data,
                     )
 
                 raise RuntimeError(f"Bedrock returned stopReason={stop_reason!r} without text.")
@@ -139,6 +145,7 @@ class BaseAgent(ABC):
                 rows_found=total_rows,
                 error=str(exc),
                 tool_trace=tool_trace or None,
+                chart_data=chart_data,
             )
 
     @abstractmethod
@@ -222,6 +229,14 @@ class BaseAgent(ABC):
             return int(row_count or 0)
         except (TypeError, ValueError):
             return 0
+
+    def _extract_chart_data(self, output: Any) -> dict[str, Any] | None:
+        if not isinstance(output, dict):
+            return None
+        chart = output.get("chart_data")
+        if isinstance(chart, dict) and chart.get("available") is not False:
+            return self._json_safe(chart)
+        return None
 
     def _json_safe(self, value: Any) -> Any:
         """Recursively coerce common Python/DB types into Bedrock document types."""

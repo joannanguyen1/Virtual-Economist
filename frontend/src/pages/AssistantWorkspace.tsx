@@ -4,6 +4,7 @@ import ChatInterface, {
   ChatMessage,
   ChatReply,
 } from "../components/ChatInterface";
+import { StockChartData } from "../components/StockPriceChart";
 import Navbar from "../components/Navbar";
 import { getAgentApiBase } from "../lib/api";
 import { clearAuthSession, getAuthToken, getStoredUser } from "../lib/auth";
@@ -97,6 +98,10 @@ interface HistoryMessage {
   id: number;
   sender: "user" | "agent";
   message: string;
+  metadata?: {
+    chart_data?: StockChartData | null;
+    [key: string]: unknown;
+  };
   created_at: string;
 }
 
@@ -281,6 +286,10 @@ const AssistantWorkspace: React.FC = () => {
           text: message.message,
           agentType:
             message.sender === "agent" ? toAgentType(localChat?.agent_type) : undefined,
+          chartData:
+            message.sender === "agent"
+              ? (message.metadata?.chart_data ?? null)
+              : null,
         })),
       );
       return;
@@ -322,6 +331,10 @@ const AssistantWorkspace: React.FC = () => {
           text: message.message,
           agentType:
             message.sender === "agent" ? toAgentType(data.agent_type) : undefined,
+          chartData:
+            message.sender === "agent"
+              ? (message.metadata?.chart_data ?? null)
+              : null,
         })),
       );
     } catch (error) {
@@ -338,6 +351,10 @@ const AssistantWorkspace: React.FC = () => {
               message.sender === "agent"
                 ? toAgentType(localChat.agent_type)
                 : undefined,
+            chartData:
+              message.sender === "agent"
+                ? (message.metadata?.chart_data ?? null)
+                : null,
           })),
         );
       } else {
@@ -423,6 +440,10 @@ const AssistantWorkspace: React.FC = () => {
           : null,
       tool_trace:
         payload && Array.isArray(payload.tool_trace) ? payload.tool_trace : null,
+      chart_data:
+        payload?.chart_data && typeof payload.chart_data === "object"
+          ? (payload.chart_data as StockChartData)
+          : null,
     };
   };
 
@@ -450,12 +471,16 @@ const AssistantWorkspace: React.FC = () => {
         id: Date.now(),
         sender: "user" as const,
         message: question,
+        metadata: {},
         created_at: new Date().toISOString(),
       },
       {
         id: Date.now() + 1,
         sender: "agent" as const,
         message: answerText,
+        metadata: {
+          chart_data: reply.chart_data ?? null,
+        },
         created_at: new Date().toISOString(),
       },
     ];

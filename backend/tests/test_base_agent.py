@@ -33,6 +33,13 @@ class _FakeAgent(BaseAgent):
             "sql": "SELECT 1",
             "row_count": 2,
             "rows": [{"value": input_data["value"]}],
+            "chart_data": {
+                "symbol": "AAPL",
+                "points": [
+                    {"date": "2026-03-01", "close": 100.0},
+                    {"date": "2026-03-02", "close": 101.5},
+                ],
+            },
         }
 
 
@@ -93,3 +100,10 @@ def test_base_agent_runs_tool_loop_and_collects_trace(monkeypatch) -> None:
             },
         }
     ]
+    assert result.chart_data == {
+        "symbol": "AAPL",
+        "points": [
+            {"date": "2026-03-01", "close": 100.0},
+            {"date": "2026-03-02", "close": 101.5},
+        ],
+    }

@@ -27,8 +27,9 @@ NOVA_LITE: str = "amazon.nova-lite-v1:0"  # Nova Lite — fast entity extraction
 CLAUDE_SONNET: str = NOVA_PRO
 CLAUDE_HAIKU: str = NOVA_LITE
 
-# Titan Text Lite — fast classifier (question routing)
-TITAN_TEXT_LITE: str = "amazon.titan-text-lite-v1:0"
+# Question-routing classifier — reuse Nova Lite so routing does not depend on
+# the retired Titan Text Lite model.
+TITAN_TEXT_LITE: str = NOVA_LITE
 
 # Titan Embeddings V1 — 1536 dimensions, matches vector(1536) in DB schema
 TITAN_EMBED: str = "amazon.titan-embed-text-v1"

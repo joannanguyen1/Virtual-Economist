@@ -34,6 +34,7 @@ class ChatResponse(BaseModel):
     sql_used: str | None = None  # debug only; omit in production if desired
     error: str | None = None
     tool_trace: list[dict] | None = None
+    chart_data: dict | None = None
 
 
 # ---------------------------------------------------------------------------

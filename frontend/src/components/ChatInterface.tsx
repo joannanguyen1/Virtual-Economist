@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import StockPriceChart, { StockChartData } from "./StockPriceChart";
 import "../styles/chat.css";
 
 type AgentType = "housing" | "market" | null;
@@ -10,6 +11,7 @@ export interface ChatMessage {
   sender: "user" | "assistant";
   text: string;
   agentType?: AgentType;
+  chartData?: StockChartData | null;
 }
 
 interface ModeOption {
@@ -23,7 +25,27 @@ export interface ChatReply {
   conversation_id?: number | string | null;
   error?: string | null;
   tool_trace?: unknown[] | null;
+  chart_data?: StockChartData | null;
 }
+
+const stripRenderedChartBlock = (
+  text: string,
+  chartData?: StockChartData | null,
+) => {
+  if (!chartData) {
+    return text;
+  }
+
+  const withoutChartBlocks = text.replace(/```[\s\S]*?```/g, (block) =>
+    /\d{4}-\d{2}-\d{2}\s+\$[\d,.]+/.test(block) ? "" : block,
+  );
+
+  return withoutChartBlocks
+    .replace(/!\[[^\]]*]\([^)]+\)/g, "")
+    .replace(/(?:^|\n)(?:\d{4}-\d{2}-\d{2}\s+\$[\d,.]+[^\n]*\n?)+/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+};
 
 interface ChatInterfaceProps {
   title: string;
@@ -159,6 +181,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           Object.prototype.hasOwnProperty.call(reply, "agent_type")
             ? (reply.agent_type ?? null)
             : undefined,
+        chartData: reply.chart_data ?? null,
       };
 
       setMessages((previous) => [...previous, assistantMessage]);
@@ -279,9 +302,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
                 <div className="message-body">
                   {message.sender === "assistant" ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {message.text}
-                    </ReactMarkdown>
+                    <>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {stripRenderedChartBlock(message.text, message.chartData)}
+                      </ReactMarkdown>
+                      {message.chartData ? (
+                        <StockPriceChart chart={message.chartData} />
+                      ) : null}
+                    </>
                   ) : (
                     <p>{message.text}</p>
                   )}

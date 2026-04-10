@@ -10,6 +10,7 @@ domains before dispatching to the appropriate specialist agent:
 
 from __future__ import annotations
 
+import difflib
 import re
 
 from loguru import logger
@@ -61,6 +62,10 @@ _MARKET_CONTEXT_TERMS = (
     "stocks",
     "price",
     "prices",
+    "graph",
+    "chart",
+    "plot",
+    "change",
     "quote",
     "quotes",
     "high",
@@ -94,12 +99,17 @@ _TIME_WINDOW_RE = re.compile(
     r"\b(?:last|past)\s+(?:\d+\s+)?(?:day|days|week|weeks|month|months|year|years)\b",
     re.IGNORECASE,
 )
+_REPEATED_LETTER_RE = re.compile(r"([a-z])\1{2,}", re.IGNORECASE)
+_ALPHA_TOKEN_RE = re.compile(r"\b[a-z]{4,}\b", re.IGNORECASE)
 
 _MARKET_OVERRIDE_KW = {
     "stock",
     "stocks",
     "stock price",
     "share price",
+    "price change",
+    "stock chart",
+    "price chart",
     "company",
     "companies",
     "ticker",
@@ -175,6 +185,37 @@ _HOUSING_OVERRIDE_KW = {
     "snow",
     "precipitation",
 }
+_COMMON_MARKET_COMPANY_HINTS = {
+    "apple",
+    "microsoft",
+    "nvidia",
+    "tesla",
+    "amazon",
+    "alphabet",
+    "google",
+    "meta",
+    "broadcom",
+    "adobe",
+    "amd",
+    "netflix",
+    "oracle",
+    "salesforce",
+    "jpmorgan",
+    "walmart",
+    "exxon",
+}
+_TYPO_CORRECTION_WORDS = {
+    word
+    for phrase in (
+        set(_MARKET_CONTEXT_TERMS)
+        | _MARKET_OVERRIDE_KW
+        | _HOUSING_OVERRIDE_KW
+        | _COMMON_MARKET_COMPANY_HINTS
+        | {"current", "change", "graph", "chart", "plot"}
+    )
+    for word in re.findall(r"[a-z]+", phrase.lower())
+    if len(word) >= 4
+}
 
 
 def _contains_keyword(text: str, keyword: str) -> bool:
@@ -182,18 +223,66 @@ def _contains_keyword(text: str, keyword: str) -> bool:
     return re.search(rf"\b{re.escape(keyword)}\b", text) is not None
 
 
+def _collapse_repeated_letters(value: str) -> str:
+    """Reduce noisy repeated letters while preserving valid doubles like Apple."""
+    return _REPEATED_LETTER_RE.sub(lambda match: match.group(1) * 2, value)
+
+
+def _correct_domain_typos(text: str) -> str:
+    """Correct obvious domain-specific typos such as stcko -> stock."""
+
+    def is_confident_typo(word: str, replacement: str) -> bool:
+        if abs(len(replacement) - len(word)) > 1:
+            return False
+        if "".join(sorted(word)) == "".join(sorted(replacement)):
+            return True
+        return word[0] == replacement[0] and word[-1] == replacement[-1]
+
+    def replace(match: re.Match[str]) -> str:
+        word = match.group(0)
+        lower = word.lower()
+        if lower in _TYPO_CORRECTION_WORDS:
+            return word
+
+        suggestions = difflib.get_close_matches(
+            lower,
+            sorted(_TYPO_CORRECTION_WORDS),
+            n=1,
+            cutoff=0.6,
+        )
+        if not suggestions:
+            return word
+
+        replacement = suggestions[0]
+        if not is_confident_typo(lower, replacement):
+            return word
+        if word.isupper():
+            return replacement.upper()
+        if word[0].isupper():
+            return replacement.capitalize()
+        return replacement
+
+    return _ALPHA_TOKEN_RE.sub(replace, text)
+
+
 def _normalize_question_text(question: str) -> str:
     """Normalize obvious merged words and possessives so routing is typo-tolerant."""
     normalized = question.strip()
+    normalized = _collapse_repeated_letters(normalized)
     normalized = re.sub(r"(?i)\b([a-z]{3,})'s\b", r"\1", normalized)
     normalized = _MERGED_MARKET_TERM_RE.sub(r"\1 \2", normalized)
     normalized = _TRAILING_PLURAL_MARKET_RE.sub(r"\1 \2", normalized)
+    normalized = _correct_domain_typos(normalized)
     return " ".join(normalized.split())
 
 
 def _looks_like_market_time_series(question: str) -> bool:
     """Catch messy time-series market questions like 'appleshigh over 90 days'."""
     metric_terms = {
+        "graph",
+        "chart",
+        "plot",
+        "change",
         "price",
         "high",
         "low",

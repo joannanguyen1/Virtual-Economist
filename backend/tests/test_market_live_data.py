@@ -65,6 +65,36 @@ def test_finnhub_search_ticker_handles_merged_market_terms(
     assert "apple" in calls
 
 
+def test_finnhub_search_ticker_handles_typoed_company_and_market_terms(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    def fake_finnhub_get(path: str, **params: str) -> dict:
+        assert path == "/search"
+        query = params["q"]
+        calls.append(query)
+        if query.lower() == "apple":
+            return {
+                "count": 1,
+                "result": [
+                    {
+                        "description": "Apple Inc",
+                        "displaySymbol": "AAPL",
+                        "symbol": "AAPL",
+                        "type": "Common Stock",
+                    }
+                ],
+            }
+        return {"count": 0, "result": []}
+
+    live_apis.finnhub_search_ticker.cache_clear()
+    monkeypatch.setattr(live_apis, "_finnhub_get", fake_finnhub_get)
+
+    assert live_apis.finnhub_search_ticker("appple sotkc price") == "AAPL"
+    assert "apple" in {call.lower() for call in calls}
+
+
 def test_get_finnhub_company_data_skips_analyst_call_by_default(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -270,6 +300,10 @@ def test_market_agent_historical_ohlcv_tool_queries_stock_ohlcv(
     assert result["row_count"] == 3
     assert result["summary"]["latest_close"] == 110.0
     assert result["summary"]["period_return_pct"] == 10.0
+    assert result["chart_data"]["available"] is True
+    assert result["chart_data"]["symbol"] == "AAPL"
+    assert result["chart_data"]["points"][0]["date"] == "2026-03-03"
+    assert result["chart_data"]["points"][-1]["close"] == 110.0
 
 
 def test_market_agent_performance_tool_calculates_risk_metrics(
