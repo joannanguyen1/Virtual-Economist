@@ -11,6 +11,7 @@ Provides thin wrappers around:
 
 from __future__ import annotations
 
+import difflib
 import json
 import os
 import re
@@ -71,6 +72,10 @@ _MARKET_CONTEXT_TERMS = (
     "stocks",
     "price",
     "prices",
+    "graph",
+    "chart",
+    "plot",
+    "change",
     "quote",
     "quotes",
     "high",
@@ -100,10 +105,42 @@ _TRAILING_MARKET_TERM_RE = re.compile(
     rf"\b([A-Za-z]{{3,}}?)(?:s)? ((?:{_MARKET_CONTEXT_PATTERN})(?: .*)?)\b",
     re.IGNORECASE,
 )
+_REPEATED_LETTER_RE = re.compile(r"([A-Za-z])\1{2,}")
+_SEARCH_TOKEN_RE = re.compile(r"\b[A-Za-z]{4,}\b")
+_COMMON_COMPANY_HINTS = {
+    "apple",
+    "microsoft",
+    "nvidia",
+    "tesla",
+    "amazon",
+    "alphabet",
+    "google",
+    "meta",
+    "broadcom",
+    "adobe",
+    "amd",
+    "netflix",
+    "oracle",
+    "salesforce",
+    "jpmorgan",
+    "walmart",
+    "exxon",
+}
+_SEARCH_CORRECTION_WORDS = {
+    word
+    for phrase in (
+        set(_MARKET_CONTEXT_TERMS)
+        | _COMMON_COMPANY_HINTS
+        | {"current", "change", "graph", "chart", "plot"}
+    )
+    for word in re.findall(r"[a-z]+", phrase.lower())
+    if len(word) >= 4
+}
 
 
 def _normalize_company_name(value: str) -> str:
     """Lowercase and normalize punctuation/spacing for fuzzy company matching."""
+    value = _REPEATED_LETTER_RE.sub(lambda match: match.group(1) * 2, value)
     cleaned = _NON_ALNUM_RE.sub(" ", value).strip().lower()
     return " ".join(cleaned.split())
 
@@ -117,6 +154,43 @@ def _strip_corporate_suffixes(value: str) -> str:
 def _split_embedded_market_terms(value: str) -> str:
     """Insert spaces into merged phrases like 'appleshigh' -> 'apples high'."""
     return _MERGED_MARKET_TERM_RE.sub(r"\1 \2", value)
+
+
+def _correct_search_typos(value: str) -> str:
+    """Correct obvious company/market typos before Finnhub search."""
+
+    def is_confident_typo(word: str, replacement: str) -> bool:
+        if abs(len(replacement) - len(word)) > 1:
+            return False
+        if "".join(sorted(word)) == "".join(sorted(replacement)):
+            return True
+        return word[0] == replacement[0] and word[-1] == replacement[-1]
+
+    def replace(match: re.Match[str]) -> str:
+        word = match.group(0)
+        lower = word.lower()
+        if lower in _SEARCH_CORRECTION_WORDS:
+            return word
+
+        suggestions = difflib.get_close_matches(
+            lower,
+            sorted(_SEARCH_CORRECTION_WORDS),
+            n=1,
+            cutoff=0.6,
+        )
+        if not suggestions:
+            return word
+
+        replacement = suggestions[0]
+        if not is_confident_typo(lower, replacement):
+            return word
+        if word.isupper():
+            return replacement.upper()
+        if word[0].isupper():
+            return replacement.capitalize()
+        return replacement
+
+    return _SEARCH_TOKEN_RE.sub(replace, value)
 
 
 def _strip_market_context_terms(value: str) -> str:
@@ -134,6 +208,9 @@ def _company_search_candidates(company: str) -> list[str]:
     raw = company.strip()
     if not raw:
         return []
+
+    raw = _REPEATED_LETTER_RE.sub(lambda match: match.group(1) * 2, raw)
+    raw = _correct_search_typos(_split_embedded_market_terms(raw))
 
     candidates: list[str] = []
     seen: set[str] = set()
@@ -165,7 +242,13 @@ def _company_search_candidates(company: str) -> list[str]:
 
 def _score_finnhub_result(company: str, result: dict) -> int:
     """Heuristic scoring for the best Finnhub search match."""
-    target = _normalize_company_name(company)
+    corrected_company = _correct_search_typos(
+        _split_embedded_market_terms(
+            _REPEATED_LETTER_RE.sub(lambda match: match.group(1) * 2, company)
+        )
+    )
+    stripped_company = _strip_market_context_terms(corrected_company) or corrected_company
+    target = _normalize_company_name(stripped_company)
     raw_upper = company.strip().upper()
     symbol = str(result.get("symbol", ""))
     display_symbol = str(result.get("displaySymbol", ""))

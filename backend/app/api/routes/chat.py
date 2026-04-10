@@ -46,6 +46,7 @@ def _persist_turn(
     rows_found: int,
     error: str | None,
     tool_trace: list[dict] | None,
+    chart_data: dict | None,
 ) -> int:
     """Save a user + agent message pair and return the chat_id."""
     if chat_request_conv_id is not None:
@@ -64,6 +65,7 @@ def _persist_turn(
             "rows_found": rows_found,
             "error": error,
             "tool_trace": tool_trace,
+            "chart_data": chart_data,
         },
     )
     return chat_id
@@ -106,6 +108,7 @@ def unified_chat(
                 rows_found=result.rows_found,
                 error=result.error,
                 tool_trace=result.tool_trace,
+                chart_data=result.chart_data,
             )
         except Exception as exc:
             logger.warning("history save failed (unified/{}): {}", agent_type, exc)
@@ -118,6 +121,7 @@ def unified_chat(
         sql_used=result.sql_used,
         error=result.error,
         tool_trace=result.tool_trace,
+        chart_data=result.chart_data,
     )
 
 
@@ -148,6 +152,7 @@ def housing_chat(
                 rows_found=result.rows_found,
                 error=result.error,
                 tool_trace=result.tool_trace,
+                chart_data=result.chart_data,
             )
         except Exception as exc:
             logger.warning("history save failed (housing): {}", exc)
@@ -160,6 +165,7 @@ def housing_chat(
         sql_used=result.sql_used,
         error=result.error,
         tool_trace=result.tool_trace,
+        chart_data=result.chart_data,
     )
 
 
@@ -190,6 +196,7 @@ def market_chat(
                 rows_found=result.rows_found,
                 error=result.error,
                 tool_trace=result.tool_trace,
+                chart_data=result.chart_data,
             )
         except Exception as exc:
             logger.warning("history save failed (market): {}", exc)
@@ -202,4 +209,5 @@ def market_chat(
         sql_used=result.sql_used,
         error=result.error,
         tool_trace=result.tool_trace,
+        chart_data=result.chart_data,
     )

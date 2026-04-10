@@ -188,7 +188,7 @@ class MarketAgent(BaseAgent):
                     "description": (
                         "Fetch historical daily OHLCV data from the local stock_ohlcv table. "
                         "Useful for price-history, trend, high/low range, dividend, and "
-                        "volume questions."
+                        "volume questions, including structured chart or graph requests."
                     ),
                     "inputSchema": {
                         "json": {
@@ -468,6 +468,7 @@ LIMIT %s"""
             "row_count": len(rows),
             "rows": rows[-min(len(rows), 120) :],
             "summary": summary,
+            "chart_data": self._build_ohlcv_chart_data(symbol, rows, summary),
         }
 
     def _tool_analyze_stock_performance(self, input_data: dict[str, Any]) -> dict[str, Any]:
@@ -647,6 +648,63 @@ ORDER BY trade_date ASC"""
             "average_volume": round(sum(volumes) / len(volumes), 2) if volumes else None,
             "total_dividends": round(total_dividends, 4),
         }
+
+    def _build_ohlcv_chart_data(
+        self,
+        symbol: str,
+        rows: list[dict[str, Any]],
+        summary: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not rows:
+            return {"available": False}
+
+        points = self._sample_close_points(rows, maximum_points=240)
+        if not points:
+            return {"available": False}
+
+        return {
+            "available": True,
+            "chart_type": "line",
+            "metric": "close",
+            "symbol": symbol,
+            "start_date": summary.get("start_date"),
+            "end_date": summary.get("end_date"),
+            "latest_close": summary.get("latest_close"),
+            "period_return_pct": summary.get("period_return_pct"),
+            "highest_high": summary.get("highest_high"),
+            "lowest_low": summary.get("lowest_low"),
+            "average_volume": summary.get("average_volume"),
+            "points": points,
+            "sampled": len(points) < len(rows),
+            "observations": len(rows),
+        }
+
+    def _sample_close_points(
+        self,
+        rows: list[dict[str, Any]],
+        *,
+        maximum_points: int = 12,
+    ) -> list[dict[str, Any]]:
+        closes = [
+            {
+                "date": str(row.get("trade_date")),
+                "close": round(self._to_float(row.get("close")), 4),
+            }
+            for row in rows
+            if row.get("trade_date") is not None and row.get("close") is not None
+        ]
+        if not closes:
+            return []
+        if len(closes) <= maximum_points:
+            return closes
+
+        step = max(1, (len(closes) - 1) // (maximum_points - 1))
+        sampled = [closes[index] for index in range(0, len(closes), step)]
+        if sampled[-1]["date"] != closes[-1]["date"]:
+            sampled.append(closes[-1])
+        if len(sampled) > maximum_points:
+            return [*sampled[: maximum_points - 1], closes[-1]]
+        return sampled
 
     def _compute_performance_metrics(
         self,
