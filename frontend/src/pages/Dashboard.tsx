@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import "../styles/dashboard.css";
+import WatchlistCard from "../components/WatchlistCard";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
         </section>
-
+        <WatchlistCard />
         <section className="agents-grid">
           {workspaces.map((workspace) => (
             <div
