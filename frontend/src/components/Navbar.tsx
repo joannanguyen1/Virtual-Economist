@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { clearAuthSession, getStoredUser } from "../lib/auth";
+import { clearAuthSession, getStoredUser, isAdmin } from "../lib/auth";
 import "../styles/navbar.css";
 
 const Navbar: React.FC = () => {
@@ -45,6 +45,11 @@ const Navbar: React.FC = () => {
             <NavLink to="/assistant" className="navbar-link navbar-link-primary">
               Assistant
             </NavLink>
+            {user && isAdmin(user.role) ? (
+              <NavLink to="/admin" className="navbar-link">
+                Admin
+              </NavLink>
+            ) : null}
             {user ? (
               <>
                 <NavLink to="/profile" className="navbar-user-pill navbar-user-pill--link">
@@ -86,6 +91,11 @@ const Navbar: React.FC = () => {
             <NavLink to="/about" className="navbar-link">
               About
             </NavLink>
+            {user && isAdmin(user.role) ? (
+              <NavLink to="/admin" className="navbar-link">
+                Admin
+              </NavLink>
+            ) : null}
             {user ? (
               <>
                 <NavLink to="/profile" className="navbar-user-pill navbar-user-pill--link">

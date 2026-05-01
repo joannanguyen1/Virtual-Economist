@@ -11,6 +11,8 @@ import AssistantWorkspace from "./pages/AssistantWorkspace";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import Features from "./pages/Features";
 import Profile from "./pages/Profile";
+import AdminPage from "./pages/AdminPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const App: React.FC = () => {
   return (
@@ -18,13 +20,49 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/assistant" element={<AssistantWorkspace />} />
+        <Route
+          path="/assistant"
+          element={
+            <ProtectedRoute>
+              <AssistantWorkspace />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route path="/housing" element={<HousingAgent />} />
-        <Route path="/market" element={<MarketAgent />} />
+        <Route
+          path="/housing"
+          element={
+            <ProtectedRoute requireAgentMode="housing">
+              <HousingAgent />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/market"
+          element={
+            <ProtectedRoute requireAgentMode="market">
+              <MarketAgent />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/about" element={<About />} />
         <Route path="/features" element={<Features />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requireRole="admin">
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="*" element={<Navigate to="/assistant" replace />} />
