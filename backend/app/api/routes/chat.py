@@ -1,13 +1,13 @@
 """Chat routes — unified endpoint + per-agent endpoints.
 
-POST /api/chat           →  Titan classifier auto-routes to the right agent
-POST /api/chat/housing   →  HousingAgent (direct)
-POST /api/chat/market    →  MarketAgent (direct)
+POST /api/chat           →  Titan classifier auto-routes to the right agent (admin only)
+POST /api/chat/housing   →  HousingAgent (admin or housing role)
+POST /api/chat/market    →  MarketAgent (admin or market role)
 
 All endpoints:
- - Accept a ChatRequest body
+ - Require an authenticated user with the appropriate role
  - Run the agent pipeline
- - If the user is authenticated, persist the turn to stored_chats / stored_messages
+ - Persist the turn to stored_chats / stored_messages
  - Return a ChatResponse (includes conversation_id so the frontend can continue the thread)
 """
 
@@ -20,7 +20,7 @@ from backend.app.agents.housing.agent import HousingAgent
 from backend.app.agents.market.agent import MarketAgent
 from backend.app.agents.router import route_question
 from backend.app.api.schemas import ChatRequest, ChatResponse
-from backend.app.middleware.auth import get_current_user_id
+from backend.app.middleware.auth import CurrentUser, require_role
 from backend.app.services import history as hist
 from backend.app.services.history import SENDER_AGENT, SENDER_USER
 
@@ -72,46 +72,35 @@ def _persist_turn(
 
 
 # ---------------------------------------------------------------------------
-# Unified endpoint — Titan Text Lite auto-classifies and routes
+# Unified endpoint — Titan Text Lite auto-classifies and routes (admin only)
 # ---------------------------------------------------------------------------
 
 
 @router.post("", response_model=ChatResponse)
 def unified_chat(
     body: ChatRequest,
-    user_id: int | None = Depends(get_current_user_id),
+    user: CurrentUser = Depends(require_role("admin")),
 ) -> ChatResponse:
-    """Send any question to the Virtual Economist.
-
-    Amazon Titan Text Lite classifies the question and automatically routes it
-    to the Housing Agent or Market Agent.
-
-    Example questions:
-    - "What is the median home value in Austin, Texas?"
-    - "What is Apple's current stock price?"
-    - "How has housing inventory changed in Miami?"
-    - "What is the current unemployment rate?"
-    """
-    logger.info("POST /chat (unified) | user={} question={!r}", user_id, body.question)
+    """Send any question to the Virtual Economist (admin-only auto-routing)."""
+    logger.info("POST /chat (unified) | user={} question={!r}", user.id, body.question)
     agent_type, result = route_question(body.question)
 
     chat_id: int | None = None
-    if user_id is not None:
-        try:
-            chat_id = _persist_turn(
-                user_id=user_id,
-                agent_type=agent_type,
-                question=body.question,
-                chat_request_conv_id=body.conversation_id,
-                answer=result.answer,
-                sql_used=result.sql_used,
-                rows_found=result.rows_found,
-                error=result.error,
-                tool_trace=result.tool_trace,
-                chart_data=result.chart_data,
-            )
-        except Exception as exc:
-            logger.warning("history save failed (unified/{}): {}", agent_type, exc)
+    try:
+        chat_id = _persist_turn(
+            user_id=user.id,
+            agent_type=agent_type,
+            question=body.question,
+            chat_request_conv_id=body.conversation_id,
+            answer=result.answer,
+            sql_used=result.sql_used,
+            rows_found=result.rows_found,
+            error=result.error,
+            tool_trace=result.tool_trace,
+            chart_data=result.chart_data,
+        )
+    except Exception as exc:
+        logger.warning("history save failed (unified/{}): {}", agent_type, exc)
 
     return ChatResponse(
         answer=result.answer,
@@ -126,36 +115,35 @@ def unified_chat(
 
 
 # ---------------------------------------------------------------------------
-# Housing endpoint (direct)
+# Housing endpoint — admin or housing role
 # ---------------------------------------------------------------------------
 
 
 @router.post("/housing", response_model=ChatResponse)
 def housing_chat(
     body: ChatRequest,
-    user_id: int | None = Depends(get_current_user_id),
+    user: CurrentUser = Depends(require_role("admin", "housing")),
 ) -> ChatResponse:
     """Send a message directly to the Housing & City Agent."""
-    logger.info("POST /chat/housing | user={} question={!r}", user_id, body.question)
+    logger.info("POST /chat/housing | user={} question={!r}", user.id, body.question)
     result = _housing_agent.run(body.question)
 
     chat_id: int | None = None
-    if user_id is not None:
-        try:
-            chat_id = _persist_turn(
-                user_id=user_id,
-                agent_type="housing",
-                question=body.question,
-                chat_request_conv_id=body.conversation_id,
-                answer=result.answer,
-                sql_used=result.sql_used,
-                rows_found=result.rows_found,
-                error=result.error,
-                tool_trace=result.tool_trace,
-                chart_data=result.chart_data,
-            )
-        except Exception as exc:
-            logger.warning("history save failed (housing): {}", exc)
+    try:
+        chat_id = _persist_turn(
+            user_id=user.id,
+            agent_type="housing",
+            question=body.question,
+            chat_request_conv_id=body.conversation_id,
+            answer=result.answer,
+            sql_used=result.sql_used,
+            rows_found=result.rows_found,
+            error=result.error,
+            tool_trace=result.tool_trace,
+            chart_data=result.chart_data,
+        )
+    except Exception as exc:
+        logger.warning("history save failed (housing): {}", exc)
 
     return ChatResponse(
         answer=result.answer,
@@ -170,36 +158,35 @@ def housing_chat(
 
 
 # ---------------------------------------------------------------------------
-# Market endpoint (direct)
+# Market endpoint — admin or market role
 # ---------------------------------------------------------------------------
 
 
 @router.post("/market", response_model=ChatResponse)
 def market_chat(
     body: ChatRequest,
-    user_id: int | None = Depends(get_current_user_id),
+    user: CurrentUser = Depends(require_role("admin", "market")),
 ) -> ChatResponse:
     """Send a message directly to the Stock & Market Agent."""
-    logger.info("POST /chat/market | user={} question={!r}", user_id, body.question)
+    logger.info("POST /chat/market | user={} question={!r}", user.id, body.question)
     result = _market_agent.run(body.question)
 
     chat_id: int | None = None
-    if user_id is not None:
-        try:
-            chat_id = _persist_turn(
-                user_id=user_id,
-                agent_type="market",
-                question=body.question,
-                chat_request_conv_id=body.conversation_id,
-                answer=result.answer,
-                sql_used=result.sql_used,
-                rows_found=result.rows_found,
-                error=result.error,
-                tool_trace=result.tool_trace,
-                chart_data=result.chart_data,
-            )
-        except Exception as exc:
-            logger.warning("history save failed (market): {}", exc)
+    try:
+        chat_id = _persist_turn(
+            user_id=user.id,
+            agent_type="market",
+            question=body.question,
+            chat_request_conv_id=body.conversation_id,
+            answer=result.answer,
+            sql_used=result.sql_used,
+            rows_found=result.rows_found,
+            error=result.error,
+            tool_trace=result.tool_trace,
+            chart_data=result.chart_data,
+        )
+    except Exception as exc:
+        logger.warning("history save failed (market): {}", exc)
 
     return ChatResponse(
         answer=result.answer,
