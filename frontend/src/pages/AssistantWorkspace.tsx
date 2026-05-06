@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import ChatInterface, {
   ChatMessage,
@@ -7,16 +7,22 @@ import ChatInterface, {
 import { StockChartData } from "../components/StockPriceChart";
 import Navbar from "../components/Navbar";
 import { getAgentApiBase } from "../lib/api";
-import { clearAuthSession, getAuthToken, getStoredUser } from "../lib/auth";
+import {
+  AgentMode,
+  allowedAgentModes,
+  clearAuthSession,
+  getAuthToken,
+  getStoredUser,
+} from "../lib/auth";
 
-type AssistantMode = "auto" | "housing" | "market";
+type AssistantMode = AgentMode;
 
 const API_BASE_URL = getAgentApiBase();
 
 const isAssistantMode = (value: string | null): value is AssistantMode =>
   value === "auto" || value === "housing" || value === "market";
 
-const modeOptions = [
+const ALL_MODE_OPTIONS = [
   { id: "auto", label: "Auto" },
   { id: "housing", label: "Housing" },
   { id: "market", label: "Market" },
@@ -154,9 +160,25 @@ const writeLocalHistory = (userId: number | undefined, chats: LocalChatRecord[])
 const AssistantWorkspace: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const modeParam = searchParams.get("mode");
-  const activeMode: AssistantMode = isAssistantMode(modeParam)
+  const [authState, setAuthState] = useState(() => ({
+    token: getAuthToken(),
+    user: getStoredUser(),
+  }));
+
+  const userRole = authState.user?.role ?? null;
+  const allowedModes = useMemo(() => allowedAgentModes(userRole), [userRole]);
+
+  const requestedMode: AssistantMode = isAssistantMode(modeParam)
     ? modeParam
     : "auto";
+  const activeMode: AssistantMode = allowedModes.includes(requestedMode)
+    ? requestedMode
+    : (allowedModes[0] ?? "auto");
+
+  const modeOptions = useMemo(
+    () => ALL_MODE_OPTIONS.filter((opt) => allowedModes.includes(opt.id as AssistantMode)),
+    [allowedModes],
+  );
   const [conversationViewKey, setConversationViewKey] = useState(0);
   const [chatSummaries, setChatSummaries] = useState<ChatSummary[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<number | string | null>(null);
@@ -164,10 +186,6 @@ const AssistantWorkspace: React.FC = () => {
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [isChatListLoading, setIsChatListLoading] = useState(false);
-  const [authState, setAuthState] = useState(() => ({
-    token: getAuthToken(),
-    user: getStoredUser(),
-  }));
 
   useEffect(() => {
     const syncAuth = () => {

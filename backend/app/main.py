@@ -32,7 +32,7 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from loguru import logger  # noqa: E402
 
-from backend.app.api.routes import chat, favorites, health, history, insights  # noqa: E402
+from backend.app.api.routes import admin, chat, favorites, health, history, insights  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # App
@@ -72,6 +72,7 @@ app.include_router(chat.router, prefix="/api")
 app.include_router(history.router, prefix="/api")
 app.include_router(insights.router, prefix="/api")
 app.include_router(favorites.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 
 
 # ---------------------------------------------------------------------------

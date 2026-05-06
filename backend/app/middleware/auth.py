@@ -1,22 +1,38 @@
-"""JWT authentication middleware for FastAPI.
+"""JWT authentication + role-based access control for FastAPI.
 
 Verifies tokens issued by the Node.js auth backend (jsonwebtoken / HS256).
-Provides two FastAPI dependency functions:
+Provides FastAPI dependency functions:
 
-  get_current_user_id  — returns user_id or None (for optional auth endpoints)
-  require_user_id      — returns user_id or raises 401 (for protected endpoints)
+  get_current_user_id  — returns user_id or None (optional auth)
+  require_user_id      — returns user_id or raises 401
+  get_current_user     — returns {id, role} dict or raises 401 (looks up role from DB)
+  require_role(*roles) — dependency factory that allows only the listed roles
 
 The JWT payload from Node.js looks like:
-  { "id": 42, "email": "user@example.com", "iat": ..., "exp": ... }
+  { "id": 42, "iat": ..., "exp": ... }
+
+Role is fetched from the users table on each request so admin role changes
+take effect immediately (no waiting for token expiry).
 """
 
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 
 import jwt
 from fastapi import Depends, Header, HTTPException
 from loguru import logger
+
+from backend.database.connect import db_cursor
+
+ALLOWED_ROLES = ("admin", "housing", "market")
+
+
+@dataclass(frozen=True)
+class CurrentUser:
+    id: int
+    role: str
 
 
 def _get_jwt_secret() -> str:
@@ -38,19 +54,21 @@ def _decode_token(token: str) -> dict | None:
         return None
 
 
+def _lookup_role(user_id: int) -> str | None:
+    with db_cursor() as cur:
+        cur.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        row = cur.fetchone()
+    return row[0] if row else None
+
+
 # ---------------------------------------------------------------------------
-# FastAPI dependency: optional auth
+# Dependencies
 # ---------------------------------------------------------------------------
 
 
 async def get_current_user_id(
     authorization: str | None = Header(default=None),
 ) -> int | None:
-    """Extract user_id from the Authorization header if present and valid.
-
-    Returns None (not 401) so agents can be used without auth during dev
-    — chat history simply won't be persisted when user_id is None.
-    """
     if not authorization or not authorization.startswith("Bearer "):
         return None
 
@@ -63,18 +81,37 @@ async def get_current_user_id(
     return int(user_id) if user_id is not None else None
 
 
-# ---------------------------------------------------------------------------
-# FastAPI dependency: required auth
-# ---------------------------------------------------------------------------
-
-
 async def require_user_id(
     user_id: int | None = Depends(get_current_user_id),
 ) -> int:
-    """Like get_current_user_id but raises 401 if no valid token is provided.
-
-    Use this for history endpoints that must belong to a specific user.
-    """
     if user_id is None:
         raise HTTPException(status_code=401, detail="Authentication required")
     return user_id
+
+
+async def get_current_user(
+    user_id: int = Depends(require_user_id),
+) -> CurrentUser:
+    """Return {id, role} for the authenticated user, fetching role from DB."""
+    role = _lookup_role(user_id)
+    if role is None:
+        raise HTTPException(status_code=401, detail="User no longer exists")
+    if role not in ALLOWED_ROLES:
+        logger.warning("auth | user {} has invalid role {!r}", user_id, role)
+        raise HTTPException(status_code=403, detail="Invalid role on user account")
+    return CurrentUser(id=user_id, role=role)
+
+
+def require_role(*allowed: str):
+    """Dependency factory: 403 unless the user's role is in `allowed`."""
+    allowed_set = set(allowed)
+
+    async def _dep(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+        if user.role not in allowed_set:
+            raise HTTPException(
+                status_code=403,
+                detail=f"This action requires one of the following roles: {sorted(allowed_set)}",
+            )
+        return user
+
+    return _dep
