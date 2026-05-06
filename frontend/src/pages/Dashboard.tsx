@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import "../styles/dashboard.css";
 import WatchlistCard from "../components/WatchlistCard";
+import HousingHeatmap from "../components/HousingHeatmap";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -64,6 +65,18 @@ const Dashboard: React.FC = () => {
           </div>
         </section>
         <WatchlistCard />
+
+        <section className="dashboard-overview">
+          <div className="dashboard-panel">
+            <h2>Housing heatmap</h2>
+            <p className="dashboard-muted">
+              Search a city/state, then pan/zoom to change the selected region.
+              Metrics may not be up-to-date for all locations.
+            </p>
+            <HousingHeatmap />
+          </div>
+        </section>
+
         <section className="agents-grid">
           {workspaces.map((workspace) => (
             <div

@@ -624,11 +624,20 @@ def _infer_state_fips_from_weather_geocode(city_name: str) -> str:
     return _STATE_FIPS.get(state_name) or _STATE_ABBR_TO_FIPS.get(state_name.upper(), "")
 
 
+@lru_cache(maxsize=128)
 def _census_rows(state_fips: str, key: str = "") -> list[list[str]]:
     """Fetch ACS rows, retrying without an API key if the configured key is invalid."""
     url = "https://api.census.gov/data/2022/acs/acs1"
     base_params = {
-        "get": "NAME,B25077_001E,B25064_001E,B19013_001E",
+        "get": (
+            "NAME,"
+            # Housing + income
+            "B25077_001E,B25064_001E,B19013_001E,"
+            # Demographics
+            "B01003_001E,B01002_001E,"
+            # Poverty (universe + below poverty)
+            "B17001_001E,B17001_002E"
+        ),
         "for": "place:*",
         "in": f"state:{state_fips}",
     }
@@ -681,11 +690,34 @@ def census_city_snapshot(city: str) -> dict | None:
     for row in rows[1:]:
         if city_lower in row[name_idx].lower():
             result = dict(zip(headers, row, strict=False))
+
+            def _as_float(value: str | None) -> float | None:
+                if value is None or value == "":
+                    return None
+                try:
+                    return float(value)
+                except Exception:
+                    return None
+
+            population = _as_float(result.get("B01003_001E"))
+            median_age = _as_float(result.get("B01002_001E"))
+
+            poverty_universe = _as_float(result.get("B17001_001E"))
+            poverty_below = _as_float(result.get("B17001_002E"))
+            poverty_rate = (
+                round((poverty_below / poverty_universe) * 100.0, 2)
+                if poverty_universe and poverty_below
+                else None
+            )
+
             return {
                 "place_name": row[name_idx],
                 "median_home_value": result.get("B25077_001E"),
                 "median_gross_rent": result.get("B25064_001E"),
                 "median_household_income": result.get("B19013_001E"),
+                "population": population,
+                "median_age": median_age,
+                "poverty_rate": poverty_rate,
             }
     return None
 

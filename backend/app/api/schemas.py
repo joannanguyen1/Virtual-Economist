@@ -79,3 +79,47 @@ class UpdateChatTitleRequest(BaseModel):
     """Body for PATCH /api/history/chats/{chat_id}/title."""
 
     title: str = Field(..., min_length=1, max_length=200)
+
+
+# ---------------------------------------------------------------------------
+# Insights (dashboard) schemas
+# ---------------------------------------------------------------------------
+
+
+class CitySuggestionResponse(BaseModel):
+    city: str
+    latitude: float
+    longitude: float
+
+
+class HeatmapPoint(BaseModel):
+    city: str
+    latitude: float
+    longitude: float
+    value: float
+    as_of: str | None = None
+
+
+class HousingHeatmapResponse(BaseModel):
+    metric: str
+    as_of: str | None = None
+    point_count: int
+    points: list[HeatmapPoint]
+    sql: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Favorites schemas
+# ---------------------------------------------------------------------------
+
+
+class FavoriteCityResponse(BaseModel):
+    city: str
+    latitude: float
+    longitude: float
+
+
+class FavoriteCityCreateRequest(BaseModel):
+    city: str = Field(..., min_length=1, max_length=255)
+    latitude: float
+    longitude: float
