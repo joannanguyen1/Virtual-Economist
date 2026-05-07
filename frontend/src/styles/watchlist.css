@@ -1,0 +1,207 @@
+.watchlist-card {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(110, 170, 255, 0.16);
+    border-radius: 24px;
+    background: linear-gradient(
+      180deg,
+      rgba(7, 26, 46, 0.92) 0%,
+      rgba(4, 17, 32, 0.96) 100%
+    );
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.2);
+  }
+  
+  .watchlist-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .watchlist-eyebrow {
+    margin: 0 0 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(235, 241, 255, 0.78);
+  }
+  
+  .watchlist-header h2 {
+    margin: 0;
+    font-size: 1.7rem;
+    line-height: 1.15;
+    color: #f7f3ea;
+  }
+  
+  .watchlist-form {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+  
+  .watchlist-form input {
+    min-width: 180px;
+    padding: 0.85rem 1rem;
+    border: 1px solid rgba(138, 164, 199, 0.22);
+    border-radius: 999px;
+    background: rgba(14, 31, 48, 0.9);
+    color: #f6f8fb;
+    outline: none;
+  }
+  
+  .watchlist-form input::placeholder {
+    color: rgba(214, 223, 237, 0.55);
+  }
+  
+  .watchlist-form button {
+    border: none;
+    border-radius: 999px;
+    padding: 0.85rem 1.1rem;
+    background: linear-gradient(135deg, #2d9cff 0%, #55b8ff 100%);
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  
+  .watchlist-empty {
+    padding: 1.5rem 0 0.5rem;
+    color: rgba(227, 234, 245, 0.85);
+  }
+  
+  .watchlist-empty h3 {
+    margin: 0 0 0.5rem;
+    color: #f7f3ea;
+  }
+  
+  .watchlist-empty p {
+    margin: 0;
+  }
+  
+  .watchlist-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .watchlist-table-head,
+  .watchlist-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 2fr) minmax(100px, 1fr) minmax(150px, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .watchlist-table-head {
+    padding: 0 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(220, 229, 242, 0.62);
+  }
+  
+  .watchlist-row {
+    width: 100%;
+    padding: 1rem 1.1rem;
+    border: 1px solid rgba(120, 153, 191, 0.14);
+    border-radius: 18px;
+    background: rgba(9, 24, 40, 0.88);
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+    transition:
+      transform 0.18s ease,
+      border-color 0.18s ease,
+      background 0.18s ease;
+  }
+  
+  .watchlist-row:hover {
+    transform: translateY(-1px);
+    border-color: rgba(103, 181, 255, 0.28);
+    background: rgba(12, 30, 49, 0.96);
+  }
+  
+  .watchlist-symbol-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  
+  .watchlist-symbol {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #f7f3ea;
+  }
+  
+  .watchlist-name {
+    font-size: 0.95rem;
+    color: rgba(224, 232, 243, 0.72);
+  }
+  
+  .watchlist-price {
+    font-weight: 700;
+    color: #eef4ff;
+  }
+  
+  .watchlist-change {
+    font-weight: 700;
+    color: #dce5f2;
+  }
+  
+  .watchlist-change.positive {
+    color: #67d48a;
+  }
+  
+  .watchlist-change.negative {
+    color: #ff7b8d;
+  }
+  
+  .watchlist-remove {
+    border: 1px solid rgba(130, 149, 177, 0.2);
+    border-radius: 999px;
+    background: transparent;
+    color: rgba(231, 237, 245, 0.85);
+    padding: 0.55rem 0.85rem;
+    cursor: pointer;
+  }
+  
+  .watchlist-remove:hover {
+    border-color: rgba(255, 123, 141, 0.35);
+    color: #ffffff;
+  }
+  
+  @media (max-width: 900px) {
+    .watchlist-header {
+      flex-direction: column;
+    }
+  
+    .watchlist-form {
+      width: 100%;
+    }
+  
+    .watchlist-form input {
+      flex: 1;
+      min-width: 0;
+    }
+  
+    .watchlist-table-head {
+      display: none;
+    }
+  
+    .watchlist-row {
+      grid-template-columns: 1fr;
+      align-items: flex-start;
+    }
+  
+    .watchlist-remove {
+      justify-self: start;
+    }
+    
+    .watchlist-error {
+      color: red;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+    }
+  }
