@@ -1,6 +1,7 @@
 [Unit]
 Description=Virtual Economist Express auth backend
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
@@ -9,9 +10,31 @@ Group=ec2-user
 WorkingDirectory=/opt/virtual-economist/backend
 EnvironmentFile=/etc/virtual-economist/auth.env
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
-ExecStart=/usr/bin/npm start
-Restart=always
+Environment=NODE_ENV=production
+
+# Run node directly — the `npm start` wrapper has been observed exiting
+# cleanly (code 0) when its child node process dies, hiding the real
+# cause of the failure.
+ExecStart=/usr/bin/node app/index.js
+
+# Port 800 is privileged (<1024) and User=ec2-user has no caps by
+# default. Grant the service the single capability it needs.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+# Keep stdout/stderr in the journal so process-level diagnostics (the
+# beforeExit / signal / uncaughtException handlers in app/index.js)
+# show up in `journalctl -u virtual-economist-auth`.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ve-auth
+
+# Restart only on failure once we've isolated the bug; flapping clean
+# exits should not be retried indefinitely.
+Restart=on-failure
 RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Install]
 WantedBy=multi-user.target
