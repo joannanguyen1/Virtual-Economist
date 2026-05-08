@@ -1,6 +1,7 @@
 import React from "react";
 import Navbar from "../components/Navbar";
 import "../styles/features.css";
+import { allowedAgentModes, getStoredUser } from "../lib/auth";
 
 const features = [
   {
@@ -126,6 +127,58 @@ const features = [
 ];
 
 const Features: React.FC = () => {
+  const user = getStoredUser();
+  const allowedModes = allowedAgentModes(user?.role);
+
+  const scopedFeatures = features.map((feature) => {
+    if (!user) {
+      return feature;
+    }
+
+    if (feature.id !== "dashboard") {
+      return feature;
+    }
+
+    const canSeeHousing = allowedModes.includes("housing");
+    const canSeeMarket = allowedModes.includes("market");
+
+    if (canSeeHousing && !canSeeMarket) {
+      return {
+        ...feature,
+        bullets: feature.bullets.filter(
+          (b) => b !== "Track stocks you care about",
+        ),
+      };
+    }
+
+    if (canSeeMarket && !canSeeHousing) {
+      return {
+        ...feature,
+        bullets: feature.bullets.filter(
+          (b) => b !== "Geographic housing summaries" && b !== "Maps + heat maps",
+        ),
+      };
+    }
+
+    return feature;
+  });
+
+  const visibleFeatures = scopedFeatures.filter((feature) => {
+    if (!user) {
+      return true;
+    }
+
+    if (feature.id === "housing") {
+      return allowedModes.includes("housing");
+    }
+
+    if (feature.id === "stock") {
+      return allowedModes.includes("market");
+    }
+
+    return true;
+  });
+
   return (
     <>
       <Navbar />
@@ -148,7 +201,7 @@ const Features: React.FC = () => {
         </header>
 
         <div className="features-grid">
-          {features.map((f, i) => (
+          {visibleFeatures.map((f, i) => (
             <section
               key={f.id}
               className="feature-card"

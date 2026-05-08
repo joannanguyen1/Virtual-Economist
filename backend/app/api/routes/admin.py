@@ -18,6 +18,10 @@ from backend.database.connect import db_cursor
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
+_ADMIN_ONLY = require_role("admin")
+_ADMIN_ONLY_DEP = Depends(_ADMIN_ONLY)
+
+
 class UserRow(BaseModel):
     id: int
     username: str
@@ -32,7 +36,7 @@ class RoleUpdate(BaseModel):
 
 
 @router.get("/users", response_model=list[UserRow])
-def list_users(_: CurrentUser = Depends(require_role("admin"))) -> list[UserRow]:
+def list_users(_: CurrentUser = _ADMIN_ONLY_DEP) -> list[UserRow]:
     with db_cursor() as cur:
         cur.execute(
             """
@@ -60,7 +64,7 @@ def list_users(_: CurrentUser = Depends(require_role("admin"))) -> list[UserRow]
 def update_role(
     user_id: int,
     body: RoleUpdate,
-    actor: CurrentUser = Depends(require_role("admin")),
+    actor: CurrentUser = _ADMIN_ONLY_DEP,
 ) -> UserRow:
     if body.role not in ALLOWED_ROLES:
         raise HTTPException(

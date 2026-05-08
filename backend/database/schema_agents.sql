@@ -228,6 +228,7 @@ CREATE INDEX IF NOT EXISTS idx_stock_emb_recommendation
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS map_pins (
     id         SERIAL            PRIMARY KEY,
+    pin_kind   TEXT              NOT NULL DEFAULT 'city',
     city       VARCHAR(255)      NOT NULL,
     latitude   DOUBLE PRECISION  NOT NULL,
     longitude  DOUBLE PRECISION  NOT NULL,
@@ -237,6 +238,9 @@ CREATE TABLE IF NOT EXISTS map_pins (
 
 CREATE INDEX IF NOT EXISTS idx_map_pins_city
     ON map_pins (city);
+
+CREATE INDEX IF NOT EXISTS idx_map_pins_kind_city
+    ON map_pins (pin_kind, city);
 
 -- Bounding-box queries: lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?
 CREATE INDEX IF NOT EXISTS idx_map_pins_latlon
@@ -255,6 +259,29 @@ CREATE TABLE IF NOT EXISTS heat_map_data (
     lon        DOUBLE PRECISION  NOT NULL,
     created_at TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+
+-- =============================================================================
+-- FAVORITE_CITIES  (per-user saved cities)
+--
+-- Minimal persistence for the Housing heatmap page.
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS favorite_cities (
+    id         SERIAL            PRIMARY KEY,
+    user_id    INT               NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    city       VARCHAR(255)      NOT NULL,
+    latitude   DOUBLE PRECISION  NOT NULL,
+    longitude  DOUBLE PRECISION  NOT NULL,
+    created_at BIGINT            NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())::BIGINT,
+
+    UNIQUE (user_id, city)
+);
+
+CREATE INDEX IF NOT EXISTS idx_favorite_cities_user
+    ON favorite_cities (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_favorite_cities_user_city
+    ON favorite_cities (user_id, city);
 
 CREATE INDEX IF NOT EXISTS idx_heat_map_latlon
     ON heat_map_data (lat, lon);
