@@ -6,19 +6,28 @@ and are separate from the Bedrock tool-use chat flow.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.app.api.schemas import (
     CitySuggestionResponse,
     HousingHeatmapResponse,
 )
+from backend.app.middleware.auth import CurrentUser, require_role
 from backend.app.services import insights
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 
+_HOUSING_OR_ADMIN = require_role("admin", "housing")
+_HOUSING_OR_ADMIN_DEP = Depends(_HOUSING_OR_ADMIN)
+
 
 @router.get("/cities", response_model=list[CitySuggestionResponse])
-def cities(q: str, limit: int = 10, kind: str = "city") -> list[CitySuggestionResponse]:
+def cities(
+    q: str,
+    _: CurrentUser = _HOUSING_OR_ADMIN_DEP,
+    limit: int = 10,
+    kind: str = "city",
+) -> list[CitySuggestionResponse]:
     try:
         results = insights.suggest_cities(q, limit=limit, kind=kind)
     except ValueError as exc:
@@ -36,6 +45,7 @@ def housing_heatmap(
     north: float,
     west: float,
     east: float,
+    _: CurrentUser = _HOUSING_OR_ADMIN_DEP,
     limit: int = 2500,
     kind: str = "city",
     source: str = "zillow",

@@ -31,6 +31,16 @@ _housing_agent = HousingAgent()
 _market_agent = MarketAgent()
 
 
+_ADMIN_ONLY = require_role("admin")
+_ADMIN_ONLY_DEP = Depends(_ADMIN_ONLY)
+
+_ADMIN_OR_HOUSING = require_role("admin", "housing")
+_ADMIN_OR_HOUSING_DEP = Depends(_ADMIN_OR_HOUSING)
+
+_ADMIN_OR_MARKET = require_role("admin", "market")
+_ADMIN_OR_MARKET_DEP = Depends(_ADMIN_OR_MARKET)
+
+
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
@@ -79,7 +89,7 @@ def _persist_turn(
 @router.post("", response_model=ChatResponse)
 def unified_chat(
     body: ChatRequest,
-    user: CurrentUser = Depends(require_role("admin")),
+    user: CurrentUser = _ADMIN_ONLY_DEP,
 ) -> ChatResponse:
     """Send any question to the Virtual Economist (admin-only auto-routing)."""
     logger.info("POST /chat (unified) | user={} question={!r}", user.id, body.question)
@@ -122,7 +132,7 @@ def unified_chat(
 @router.post("/housing", response_model=ChatResponse)
 def housing_chat(
     body: ChatRequest,
-    user: CurrentUser = Depends(require_role("admin", "housing")),
+    user: CurrentUser = _ADMIN_OR_HOUSING_DEP,
 ) -> ChatResponse:
     """Send a message directly to the Housing & City Agent."""
     logger.info("POST /chat/housing | user={} question={!r}", user.id, body.question)
@@ -165,7 +175,7 @@ def housing_chat(
 @router.post("/market", response_model=ChatResponse)
 def market_chat(
     body: ChatRequest,
-    user: CurrentUser = Depends(require_role("admin", "market")),
+    user: CurrentUser = _ADMIN_OR_MARKET_DEP,
 ) -> ChatResponse:
     """Send a message directly to the Stock & Market Agent."""
     logger.info("POST /chat/market | user={} question={!r}", user.id, body.question)

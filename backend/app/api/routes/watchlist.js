@@ -1,6 +1,6 @@
 import express from "express";
 import pool from "../../../database/db.js";
-import { requireAuth } from "../../middleware/auth.js";
+import { requireAuth, requireRole } from "../../middleware/auth.js";
 
 const router = express.Router();
 
@@ -37,7 +37,7 @@ async function fetchQuote(symbol) {
   };
 }
 
-router.get("/", requireAuth, async (req, res) => {
+router.get("/", requireAuth, requireRole("admin", "market"), async (req, res) => {
     const userId = req.user.id;
   try {
     const result = await pool.query(
@@ -71,7 +71,7 @@ router.get("/", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, requireRole("admin", "market"), async (req, res) => {
     console.log("POST /api/watchlist hit");
   console.log("headers auth:", req.headers.authorization);
   console.log("req.user:", req.user);
@@ -122,7 +122,7 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
-router.delete("/:symbol", requireAuth, async (req, res) => {
+router.delete("/:symbol", requireAuth, requireRole("admin", "market"), async (req, res) => {
     const userId = req.user.id;
   try {
     const symbol = req.params.symbol?.trim().toUpperCase();

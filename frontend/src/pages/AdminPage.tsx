@@ -16,6 +16,35 @@ interface AdminUser {
 const ROLE_OPTIONS: UserRole[] = ["admin", "housing", "market"];
 const API_BASE = getAgentApiBase();
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const extractApiErrorMessage = (payload: unknown, fallback: string): string => {
+  if (!isRecord(payload)) return fallback;
+
+  const detail = payload.detail;
+  if (typeof detail === "string" && detail.trim().length > 0) return detail;
+
+  if (Array.isArray(detail) && detail.length > 0) {
+    const first = detail[0] as unknown;
+    if (typeof first === "string" && first.trim().length > 0) return first;
+    if (isRecord(first)) {
+      const msg = first.msg;
+      if (typeof msg === "string" && msg.trim().length > 0) return msg;
+    }
+    try {
+      return JSON.stringify(detail);
+    } catch {
+      return fallback;
+    }
+  }
+
+  const error = payload.error;
+  if (typeof error === "string" && error.trim().length > 0) return error;
+
+  return fallback;
+};
+
 const AdminPage: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,12 +96,16 @@ const AdminPage: React.FC = () => {
         },
         body: JSON.stringify({ role }),
       });
-      const payload = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      const payload: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const detail =
-          (payload?.detail as string | undefined) ||
-          (payload?.error as string | undefined) ||
-          `Failed to update role (status ${res.status}).`;
+        if (res.status === 401) {
+          clearAuthSession();
+          throw new Error("Session expired. Log in again.");
+        }
+        const detail = extractApiErrorMessage(
+          payload,
+          `Failed to update role (status ${res.status}).`,
+        );
         throw new Error(detail);
       }
       const updated = payload as AdminUser;

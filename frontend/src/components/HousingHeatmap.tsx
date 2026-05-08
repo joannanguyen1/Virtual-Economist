@@ -272,7 +272,9 @@ const HousingHeatmap: React.FC = () => {
     const timeout = window.setTimeout(async () => {
       try {
         setIsSuggesting(true);
+        const token = getAuthToken();
         const results = await fetchCitySuggestions(query, 8, {
+          token,
           signal: controller.signal,
         });
         if (!active || controller.signal.aborted) {
@@ -360,14 +362,18 @@ const HousingHeatmap: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
+        const token = getAuthToken();
+
         if (overlayEnabled) {
           const [zillowResult, censusResult] = await Promise.allSettled([
             fetchHousingHeatmap(metricDef.zillowMetric as string, bbox, {
+              token,
               signal: controller.signal,
               limit: zillowLimit,
               source: "zillow",
             }),
             fetchHousingHeatmap(metricDef.censusMetric as string, bbox, {
+              token,
               signal: controller.signal,
               limit: censusLimit,
               source: "census",
@@ -411,6 +417,7 @@ const HousingHeatmap: React.FC = () => {
           }
 
           const response = await fetchHousingHeatmap(metricToUse, bbox, {
+            token,
             signal: controller.signal,
             limit: view === "census" ? censusLimit : zillowLimit,
             source: view,

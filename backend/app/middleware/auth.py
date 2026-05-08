@@ -102,11 +102,14 @@ async def get_current_user(
     return CurrentUser(id=user_id, role=role)
 
 
+_CURRENT_USER_DEP = Depends(get_current_user)
+
+
 def require_role(*allowed: str):
     """Dependency factory: 403 unless the user's role is in `allowed`."""
     allowed_set = set(allowed)
 
-    async def _dep(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    async def _dep(user: CurrentUser = _CURRENT_USER_DEP) -> CurrentUser:
         if user.role not in allowed_set:
             raise HTTPException(
                 status_code=403,
