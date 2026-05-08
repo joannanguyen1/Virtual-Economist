@@ -47,8 +47,19 @@ const pool = new Pool({
   user: process.env.DB_USER,
   password,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
+  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
   ssl: { rejectUnauthorized: false },
+  // Keep idle clients longer than the RDS keepalive window so we don't
+  // get a flood of 'error' events when AWS reaps idle TCP sockets.
+  idleTimeoutMillis: 60_000,
+  keepAlive: true,
+});
+
+// pg.Pool emits 'error' on idle clients that disconnect unexpectedly
+// (e.g. RDS NLB closing the socket). Without a listener Node treats this
+// as an uncaught error.
+pool.on("error", (err) => {
+  console.error("[pg pool] idle client error:", err.message);
 });
 
 export default pool;
