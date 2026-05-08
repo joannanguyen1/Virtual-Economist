@@ -122,10 +122,13 @@ const AdminPage: React.FC = () => {
     <>
       <Navbar />
       <main className="admin-page">
+        <div className="admin-orb admin-orb--teal" aria-hidden="true" />
+        <div className="admin-orb admin-orb--warm" aria-hidden="true" />
         <div className="admin-container">
           <header className="admin-header">
+            <p className="admin-eyebrow">Access control</p>
             <h1>User administration</h1>
-            <p>Assign roles. Changes take effect immediately on the user's next request.</p>
+            <p className="admin-subtitle">Assign roles. Changes take effect immediately on the user's next request.</p>
           </header>
 
           {error ? <div className="admin-banner admin-banner--error">{error}</div> : null}
@@ -158,7 +161,17 @@ const AdminPage: React.FC = () => {
                           {isSelf ? <span className="admin-self-pill">You</span> : null}
                         </td>
                         <td>{u.email}</td>
-                        <td>{u.email_verified ? "Yes" : "No"}</td>
+                        <td>
+                          <span
+                            className={
+                              u.email_verified
+                                ? "admin-verify-pill admin-verify-pill--yes"
+                                : "admin-verify-pill admin-verify-pill--no"
+                            }
+                          >
+                            {u.email_verified ? "Verified" : "Pending"}
+                          </span>
+                        </td>
                         <td>
                           <select
                             className="admin-role-select"

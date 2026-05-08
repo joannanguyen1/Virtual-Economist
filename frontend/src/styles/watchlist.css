@@ -1,15 +1,28 @@
 .watchlist-card {
-    margin-top: 2rem;
-  margin-bottom: 1.5rem;
+    position: relative;
+    max-width: 1180px;
+    margin: 2rem auto 1.5rem;
     padding: 1.5rem;
-    border: 1px solid rgba(110, 170, 255, 0.16);
-    border-radius: 24px;
+    border: 1px solid var(--border-color);
+    border-radius: 1.6rem;
     background: linear-gradient(
       180deg,
       rgba(7, 26, 46, 0.92) 0%,
       rgba(4, 17, 32, 0.96) 100%
     );
-    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+  }
+
+  .watchlist-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(47, 182, 163, 0.5), transparent);
   }
 
   .watchlist-header {
@@ -22,18 +35,22 @@
 
   .watchlist-eyebrow {
     margin: 0 0 0.4rem;
-    font-size: 0.82rem;
+    font-family: var(--font-body);
+    font-size: 0.65rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(235, 241, 255, 0.78);
+    color: var(--accent-color);
   }
 
   .watchlist-header h2 {
     margin: 0;
-    font-size: 1.7rem;
-    line-height: 1.15;
-    color: #f7f3ea;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--text-primary);
   }
 
   .watchlist-form {

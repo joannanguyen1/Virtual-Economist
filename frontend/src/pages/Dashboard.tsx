@@ -51,6 +51,8 @@ const Dashboard: React.FC = () => {
     <>
       <Navbar />
       <main className="dashboard-page">
+        <div className="dashboard-orb dashboard-orb--teal" aria-hidden="true" />
+        <div className="dashboard-orb dashboard-orb--warm" aria-hidden="true" />
         <section className="dashboard-hero">
           <p className="dashboard-eyebrow">Unified research workflow</p>
           <h1>One assistant, two specialties, one cleaner interface.</h1>

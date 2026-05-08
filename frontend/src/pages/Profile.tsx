@@ -78,13 +78,6 @@ const Profile: React.FC = () => {
               <div className="profile-card-value profile-card-mono">#{user.id}</div>
             </section>
 
-            <section className="profile-card">
-              <div className="profile-card-label">PLAN</div>
-              <div className="profile-card-value">
-                <span className="profile-plan-badge">Free</span>
-              </div>
-            </section>
-
           </div>
 
           {/* Actions */}
