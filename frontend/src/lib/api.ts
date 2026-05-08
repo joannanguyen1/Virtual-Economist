@@ -12,7 +12,7 @@ export const getAgentApiBase = (): string => {
   }
 
   if (!isLocalRuntime()) {
-    return "";
+    return `${currentOrigin()}/api`;
   }
 
   return "http://localhost:8000";
